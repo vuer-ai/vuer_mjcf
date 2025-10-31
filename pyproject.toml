@@ -1,5 +1,5 @@
 [project]
-name = "vuer-mujoco"
+name = "vuer-mjcf"
 version = "0.1.0"
 description = "vuer MuJoCo Environments for Lucid-XR"
 readme = "README.md"
