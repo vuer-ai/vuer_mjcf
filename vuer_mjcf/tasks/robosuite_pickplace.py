@@ -6,7 +6,7 @@ from vuer_mjcf.schema import Body
 from vuer_mjcf.tasks import add_env
 from vuer_mjcf.tasks._floating_robotiq import FloatingRobotiq2f85
 from vuer_mjcf.tasks._tile_floor import TileFloor
-from vuer_mjcf.vendors.robosuite.robosuite_bin import RobosuiteBin
+from vuer_mjcf.third_party.robosuite.robosuite_bin import RobosuiteBin
 
 
 r, g, b = random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1)

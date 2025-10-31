@@ -2,8 +2,8 @@ from vuer_mjcf.components.concrete_slab import ConcreteSlab
 from vuer_mjcf.tasks._floating_shadowhand import FloatingShadowHand
 from vuer_mjcf.schema import Body
 from vuer_mjcf.objects.orbit_table import OpticalTable
-from vuer_mjcf.components.rigs.lighting_rig import make_lighting_rig
-from vuer_mjcf.components.rigs.camera_rig import make_camera_rig
+from vuer_mjcf.basic_components.rigs.lighting_rig import make_lighting_rig
+from vuer_mjcf.basic_components.rigs.camera_rig import make_camera_rig
 
 
 def make_schema():

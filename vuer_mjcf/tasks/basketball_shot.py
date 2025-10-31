@@ -6,13 +6,13 @@ import numpy as np
 from vuer_mjcf.objects.decomposed_obj import ObjMujocoObject
 from vuer_mjcf.tasks.base.lucidxr_task import get_site
 from vuer_mjcf.tasks.base.mocap_task import MocapTask
-from vuer_mjcf.components.rigs.camera_rig import make_camera_rig
+from vuer_mjcf.basic_components.rigs.camera_rig import make_camera_rig
 from vuer_mjcf.components.concrete_slab import ConcreteSlab
-# from vuer_mjcf.components.rigs.camera_rig import make_camera_rig
-from vuer_mjcf.components.rigs.camera_rig_zoomed_out import make_camera_rig
+# from vuer_mjcf.basic_components.rigs.camera_rig import make_camera_rig
+from vuer_mjcf.basic_components.rigs.camera_rig_zoomed_out import make_camera_rig
 from vuer_mjcf.components.concrete_slab import ConcreteSlab
 from vuer_mjcf.tasks._floating_shadowhand import FloatingShadowHand
-from vuer_mjcf.components.rigs.lighting_rig import make_lighting_rig
+from vuer_mjcf.basic_components.rigs.lighting_rig import make_lighting_rig
 from vuer_mjcf.objects.orbit_table import OpticalTable
 
 

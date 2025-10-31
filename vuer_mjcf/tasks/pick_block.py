@@ -7,7 +7,7 @@ from vuer_mjcf.tasks import add_env
 from vuer_mjcf.tasks._floating_robotiq import FloatingRobotiq2f85
 from vuer_mjcf.tasks._tile_floor import TileFloor
 from vuer_mjcf.tasks.entrypoint import make_env
-from vuer_mjcf.vendors.robohive.robohive_object import RobohiveObj
+from vuer_mjcf.third_party.robohive.robohive_object import RobohiveObj
 
 
 # Generate random values for r, g, and b

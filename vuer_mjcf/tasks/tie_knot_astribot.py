@@ -8,7 +8,7 @@ from vuer_mjcf.robots.astribot import AstribotRobotiq2f85
 from vuer_mjcf.basic_components.camera import make_camera
 from vuer_mjcf.schema import FreeBody, Body
 from vuer_mjcf.tasks import add_env
-from vuer_mjcf.components.rigs.camera_rig_calibrated import make_camera_rig, FOV
+from vuer_mjcf.basic_components.rigs.camera_rig_calibrated import make_camera_rig, FOV
 from vuer_mjcf.components.mj_ground_plane import GroundPlane
 from vuer_mjcf.tasks._floating_robotiq import FloatingRobotiq2f85
 from vuer_mjcf.tasks.base.lucidxr_task import get_geom_id, get_body_id, get_site, init_states

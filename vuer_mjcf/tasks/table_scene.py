@@ -5,7 +5,7 @@ from vuer_mjcf.tasks._tile_floor import TileFloor
 
 def make_schema(**options):
     from vuer_mjcf.utils.file import Prettify
-    from vuer_mjcf.vendors.robohive.robohive_object import RobohiveObj
+    from vuer_mjcf.third_party.robohive.robohive_object import RobohiveObj
     from vuer_mjcf.tasks._floating_robotiq import FloatingRobotiq2f85
 
     table = RobohiveObj(

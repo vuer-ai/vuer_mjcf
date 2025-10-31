@@ -4,7 +4,7 @@ from dotvar import auto_load
 
 import numpy as np
 
-from vuer_mjcf.components.rigs.camera_rig_calibrated import make_camera_rig
+from vuer_mjcf.basic_components.rigs.camera_rig_calibrated import make_camera_rig
 from vuer_mjcf.objects.eval_sdf import EvalSDF
 from vuer_mjcf.objects.mj_sdf import MjSDF
 from vuer_mjcf.objects.vuer_mug import VuerMug

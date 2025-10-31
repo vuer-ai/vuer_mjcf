@@ -6,7 +6,7 @@ from scipy.spatial.transform import Rotation as R
 from vuer_mjcf.utils.file import Save
 from vuer_mjcf.tasks import add_env
 from vuer_mjcf.components.concrete_slab import ConcreteSlabT as ConcreteSlab
-from vuer_mjcf.components.rigs.camera_rig_ortho import make_camera_rig
+from vuer_mjcf.basic_components.rigs.camera_rig_ortho import make_camera_rig
 from vuer_mjcf.se3.se3_mujoco import Vector3
 from vuer_mjcf.tasks._moving_cylinder import MovingCylinder
 from vuer_mjcf.components.force_plate import ForcePlate

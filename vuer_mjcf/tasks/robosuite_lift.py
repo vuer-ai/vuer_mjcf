@@ -5,7 +5,7 @@ from vuer_mjcf.utils.file import Save
 from vuer_mjcf.schema import Body
 from vuer_mjcf.tasks import add_env
 from vuer_mjcf.tasks._floating_robotiq import FloatingRobotiq2f85
-from vuer_mjcf.vendors.robosuite.robosuite_tablearena import RobosuiteTableArena
+from vuer_mjcf.third_party.robosuite.robosuite_tablearena import RobosuiteTableArena
 
 
 r, g, b = random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1)

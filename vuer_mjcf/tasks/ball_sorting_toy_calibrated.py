@@ -4,11 +4,11 @@ from pathlib import Path
 import numpy as np
 
 from vuer_mjcf.objects.mj_sdf import MjSDF
-from vuer_mjcf.components.rigs.camera_rig_calibrated import make_camera_rig
+from vuer_mjcf.basic_components.rigs.camera_rig_calibrated import make_camera_rig
 from vuer_mjcf.tasks._floating_robotiq import UR5Robotiq2f85
 from vuer_mjcf.tasks.base.lucidxr_task import get_site, get_geom_id
 from vuer_mjcf.tasks.base.mocap_task import MocapTask
-from vuer_mjcf.vendors.robohive.robohive_object import RobohiveObj
+from vuer_mjcf.third_party.robohive.robohive_object import RobohiveObj
 
 
 # scene center is 0.41 + 0.2 / 2 = 0.50

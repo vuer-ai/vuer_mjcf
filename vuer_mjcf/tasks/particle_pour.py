@@ -3,11 +3,11 @@ from pathlib import Path
 import numpy as np
 
 from vuer_mjcf.objects.vuer_mug import VuerMug
-from vuer_mjcf.components.rigs.camera_rig_hand import make_camera_rig
+from vuer_mjcf.basic_components.rigs.camera_rig_hand import make_camera_rig
 from vuer_mjcf.schema import Replicate, Body
 from vuer_mjcf.tasks.base.lucidxr_task import init_states
 from vuer_mjcf.tasks.base.mocap_task import MocapTask
-from vuer_mjcf.vendors.robohive.robohive_object import RobohiveObj
+from vuer_mjcf.third_party.robohive.robohive_object import RobohiveObj
 from vuer_mjcf.tasks._floating_shadowhand import FloatingShadowHand
 
 

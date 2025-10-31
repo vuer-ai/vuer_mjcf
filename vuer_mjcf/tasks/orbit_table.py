@@ -3,9 +3,9 @@ from pathlib import Path
 from vuer_mjcf.schema import Body
 from vuer_mjcf.objects.mj_sdf import MjSDF
 from vuer_mjcf.utils.file import Save
-from vuer_mjcf.components.rigs.camera_rig import make_camera_rig
+from vuer_mjcf.basic_components.rigs.camera_rig import make_camera_rig
 from vuer_mjcf.components.concrete_slab import ConcreteSlab
-from vuer_mjcf.components.rigs.lighting_rig import make_lighting_rig
+from vuer_mjcf.basic_components.rigs.lighting_rig import make_lighting_rig
 
 
 class OpticalTable(Body):

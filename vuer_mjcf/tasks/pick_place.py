@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 
-from vuer_mjcf.components.rigs.camera_rig import make_camera_rig
+from vuer_mjcf.basic_components.rigs.camera_rig import make_camera_rig
 from vuer_mjcf.se3.se3_mujoco import Vector3
 from vuer_mjcf.utils.file import Save
 from vuer_mjcf.schema import Body

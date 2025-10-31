@@ -4,17 +4,17 @@ from pathlib import Path
 
 import numpy as np
 
-from vuer_mjcf.components.rigs.camera_rig_stereo import make_origin_stereo_rig
+from vuer_mjcf.basic_components.rigs.camera_rig_stereo import make_origin_stereo_rig
 from vuer_mjcf.objects.mj_sdf import MjSDF
 from vuer_mjcf.tasks._floating_robotiq import UR5Robotiq2f85
-from vuer_mjcf.components.rigs.camera_rig_calibrated import make_camera_rig
+from vuer_mjcf.basic_components.rigs.camera_rig_calibrated import make_camera_rig
 from vuer_mjcf.tasks.base.lucidxr_task import get_site
 from vuer_mjcf.tasks.base.mocap_task import MocapTask
 from itertools import combinations
 from math import hypot
 import random
 
-from vuer_mjcf.vendors.robohive.robohive_object import RobohiveObj
+from vuer_mjcf.third_party.robohive.robohive_object import RobohiveObj
 
 
 x_center, y_center = 0.5, -0.15

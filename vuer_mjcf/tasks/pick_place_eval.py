@@ -2,12 +2,12 @@ import os
 from pathlib import Path
 
 from vuer_mjcf.objects.eval_sdf import EvalSDF
-from vuer_mjcf.components.rigs.camera_rig_calibrated import make_camera_rig
+from vuer_mjcf.basic_components.rigs.camera_rig_calibrated import make_camera_rig
 from vuer_mjcf.tasks._floating_robotiq import UR5Robotiq2f85
 from vuer_mjcf.schema import Body
 from vuer_mjcf.components.force_plate import ForcePlate
 from vuer_mjcf.tasks.pick_place_robot_room import SingleBoxRandom
-from vuer_mjcf.vendors.robohive.robohive_object import RobohiveObj
+from vuer_mjcf.third_party.robohive.robohive_object import RobohiveObj
 
 # scene center is 0.41 + 0.2 / 2 = 0.50
 x1, y1 = -0.08 + 0.4, 0.08
