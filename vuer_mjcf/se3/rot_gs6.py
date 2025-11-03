@@ -1,4 +1,8 @@
 # %%
+import mink
+import numpy as np
+
+
 def mat2gs6(m):
     """
     Convert a rotation matrix to a continuous 6D representation using the Gram-Schmidt process.
@@ -158,3 +162,26 @@ def mat2quat(rot_flat):
         return torch.from_numpy(quats).to(rot_flat.device).type(rot_flat.dtype)
     else:
         return quats
+
+def _compute_look_at_rotation(
+    head_pos: np.ndarray,
+    target_pos: np.ndarray,
+    world_up: np.ndarray = np.array([0.0, 0.0, 1.0]),
+) -> mink.SE3:
+    """Returns SE3 whose rotation points +X from head_pos toward target_pos."""
+    look_direction = target_pos - head_pos
+    x_axis = look_direction / (np.linalg.norm(look_direction) + 1e-12)
+
+    y_axis = np.cross(world_up, x_axis)
+    ny = np.linalg.norm(y_axis)
+    if ny < 1e-6:
+        y_axis = np.cross(x_axis, np.array([1.0, 0.0, 0.0]))
+        ny = np.linalg.norm(y_axis)
+        if ny < 1e-6:
+            y_axis = np.cross(x_axis, np.array([0.0, 1.0, 0.0]))
+            ny = np.linalg.norm(y_axis)
+    y_axis /= max(ny, 1e-12)
+
+    z_axis = np.cross(x_axis, y_axis)
+    R = np.column_stack((x_axis, y_axis, z_axis))
+    return mink.SE3.from_rotation(mink.SO3.from_matrix(R))

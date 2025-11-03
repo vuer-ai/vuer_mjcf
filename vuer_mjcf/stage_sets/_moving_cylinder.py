@@ -99,7 +99,7 @@ class Cylinder(Body):
         self._mocaps = self._mocaps_raw.format(**values)
 
 def make_schema(**options):
-    from vuer_mujoco.schemas.utils.file import Prettify
+    from vuer_mjcf.utils.file import Prettify
     from pathlib import Path
 
     assets = str(Path(__file__).parent.parent.parent / "assets" / "robots")

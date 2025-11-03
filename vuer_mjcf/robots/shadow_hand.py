@@ -475,8 +475,9 @@ class ShadowHandLeft(Body):
             </body>
         """
 
-    def __init__(self, *_children, **kwargs):
+    def __init__(self,  *_children, free=True, **kwargs):
         super().__init__(*_children, **kwargs)
+        self.free = free
 
         self.pos_wrist = self._pos + [0.253, 0, 0.01]
         self.pos_index = self._pos + [0.4475, 0.0325, 0.01]
@@ -484,6 +485,13 @@ class ShadowHandLeft(Body):
         self.pos_ring = self._pos + [0.447, -0.011, 0.01]
         self.pos_pinky = self._pos + [0.4385, -0.033, 0.01]
         self.pos_thumb = self._pos + [0.351, 0.11, 0.02]
+
+
+        if self.free:
+            self._children_raw = f"""
+                <joint name="rh_forearm_free" type="free"/>
+                {self._children_raw}
+            """
 
         values = self._format_dict()
         self._mocaps = self._mocaps_raw.format(**values)
@@ -600,9 +608,7 @@ class ShadowHandLeft(Body):
             else ""
         )
 
-        return """
-                <joint name="lh_forearm_free" type="free"/>
-                """ + forearm_xml + """
+        return """""" + forearm_xml + """
                 <body name="lh_wrist" pos="0.01 0 0.21301" quat="1 0 0 1">
                     <site name="lh_wrist_site" pos="0 0 0.04" quat="0 0 0.7071 0.7071" group="4" size="0.002 0.002 0.002"/>
             

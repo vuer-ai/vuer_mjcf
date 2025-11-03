@@ -3,7 +3,7 @@ from vuer_mjcf.basic_components.rigs.camera_rig import make_camera_rig
 from vuer_mjcf.basic_components.rigs.lighting_rig import make_lighting_rig
 from vuer_mjcf.schema import Mjcf
 
-from vuer_mjcf.robots.astribot import AstriBot
+from vuer_mjcf.robots.astribot import Astribot
 
 class AstriBotScene(Mjcf):
     name = "AstriBot Scene"
@@ -33,7 +33,7 @@ class AstriBotScene(Mjcf):
     def __init__(self, *_children, assets="assets", **kwargs):
         super().__init__(*_children, assets=assets, **kwargs)
 
-        robot = AstriBot(
+        robot = Astribot(
             name="astribot",
             assets="astribot",
             pos=[0, 0, 0],
@@ -49,7 +49,7 @@ class AstriBotScene(Mjcf):
         )
 
 def make_schema(**options):
-    from vuer_mujoco.schemas.utils.file import Prettify
+    from vuer_mjcf.utils.file import Prettify
     from pathlib import Path
 
     assets = str(Path(__file__).parent.parent.parent / "assets" / "robots")

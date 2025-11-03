@@ -2,312 +2,220 @@ import os
 
 from vuer_mjcf.schema.schema import MocapBody, Mjcf
 from vuer_mjcf.schema.base import Xml
-from utils.transform import compose
+from vuer_mjcf.utils.transform import compose
 # from vuer_mjcf.basic_components.rigs.camera_rig import make_camera_rig
 # from vuer_mjcf.basic_components.rigs.lighting_rig import make_lighting_rig
 # from vuer_mjcf.se3.se3_mujoco import Vector3, WXYZ
 
-class AstriBot(MocapBody):
+
+class Astribot(MocapBody):
     """
-    This is Astribot
+    This is the Gripper for the Ufactory Xarm7 robot.
     """
 
     assets: str = "astribot"
-    end_effector: Xml = None
+    end_effector: Xml
+
     _attributes = {
         "name": "astribot",
-        "childclass": "astribot",
+        "pos": "0 0 0",
+        "quat": "1 0 0 0",
     }
 
-    def __init__(self, *_children, end_effector: Xml = None, mocap_pos=None, **kwargs):
-        super().__init__(*_children, **kwargs)
-        self.end_effector = end_effector
-        if end_effector:
-            self._children = self._children + (end_effector,)
-
-        # 0.5114, 0.37265
-        # [0.36575, 0, 0.36065]
-        if mocap_pos is None:
-            self.mocap_pos = self._pos + [0.455, 0, 0.36065]
-        else:
-            self.mocap_pos = mocap_pos
-
-        # self._children = self._children + (self.mocap_pos,)
-        self.mocap_pos_left = compose(self._pos, self._quat, [0.0,  0.33,  0.8])
-        self.mocap_pos_right = compose(self._pos, self._quat, [0.0, -0.33,  0.8])
-        self.mocap_pos_head = compose(self._pos, self._quat, [0.0, 0.0, 1.55])
-
-        values = self._format_dict()
-        self._mocaps = self._mocaps_body.format(**values)
-
-
-    _mocaps_body = """
-    <body mocap="true" name="{name}-mocap-1" pos="{mocap_pos_left}">
-      <site name="{name}-mocap-site-1" size=".11" type="sphere" rgba="0.13 0.3 0.2 1"/>
+    _mocaps_raw = """
+    <body name="{name}-head_target" pos="{head_mocap_pos}" quat="{head_mocap_quat}" mocap="true">
+      <!--<geom type="sphere" size=".06" contype="0" conaffinity="0" rgba=".6 .3 .3 .2"/>-->
+      <site name="{name}-head_target_site" type="sphere" size="0.01" quat="0.707 -0.707 0 0" rgba="0 0 1 1" group="1"/>
     </body>
-    <body mocap="true" name="{name}-mocap-2" pos="{mocap_pos_right}">
-      <site name="{name}-mocap-site-2" size=".11" type="sphere" rgba="0.13 0.3 0.2 1"/>
+    <body name="{name}-arm_right_tool_target" pos="{right_mocap_pos}" quat="{right_mocap_quat}" mocap="true">
+      <!--<geom type="sphere" size=".06" contype="0" conaffinity="0" rgba=".6 .3 .3 .2"/>-->
+      <site name="{name}-arm_right_tool_target_site" type="sphere" size="0.01" rgba="0 0 1 1" group="1"/>
     </body>
-    <body mocap="true" name="{name}-mocap-3" pos="{mocap_pos_head}">
-      <site name="{name}-mocap-site-3" size=".11" type="sphere" rgba="0.13 0.3 0.2 1"/>
+    <body name="{name}-arm_left_tool_target" pos="{left_mocap_pos}" quat="{left_mocap_quat}" mocap="true">
+      <!--<geom type="sphere" size=".06" contype="0" conaffinity="0" rgba=".6 .3 .3 .2"/>-->
+      <site name="{name}-arm_left_tool_target_site" type="sphere" size="0.01" rgba="0 0 1 1" group="1"/>
     </body>
     """
 
-    _mocaps_equality = """
+    _postamble = """
     <equality>
-        <weld body1="{name}-astribot_gripper_left_base" body2="{name}-mocap-1"/>
-        <weld body1="{name}-astribot_gripper_right_base" body2="{name}-mocap-2"/>
-        <weld body1="{name}-astribot_head_link_2" body2="{name}-mocap-3"/>
+      <weld name="{name}-arm_right_tool-weld" site1="{name}-arm_right_tool" site2="{name}-arm_right_tool_target_site" solref="0.003 1" solimp="0.9 0.95 0.001"/>
+      <weld name="{name}-arm_left_tool-weld" site1="{name}-arm_left_tool" site2="{name}-arm_left_tool_target_site" solref="0.003 1" solimp="0.9 0.95 0.001"/>
+      <!--<weld name="{name}-head-weld" site1="{name}-head_target_site" site2="{name}-head"/>-->
     </equality>
     """
 
     _preamble = """
-      <default>
-        <default class="{childclass}-robot">
-          <default class="{childclass}-motor">
-            <joint />
-            <motor />
-            <position kp="50" inheritrange="1" dampratio="0.95" forcerange="-35 35"/>
-          </default>
-          <default class="{childclass}-visual">
-            <geom material="{name}-visualgeom" contype="0" conaffinity="0" group="2" />
-          </default>
-          <default class="{childclass}-collision">
-            <geom material="{name}-collision_material" condim="3" contype="0" conaffinity="1" priority="1" group="1" solref="0.005 1" friction="1 0.01 0.01" />
-            <equality solimp="0.99 0.999 1e-05" solref="0.005 1" />
-          </default>
-        </default>
-      </default>
+    <default>
+      <!--<joint limited="true"/>-->
+      <site size="0.005 0 0" rgba="0.4 0.9 0.4 1"/>
+      <general ctrllimited="true" ctrlrange="-6.2831 6.2831" forcelimited="true" biastype="affine"/>
+    </default>
 
-      <compiler angle="radian" />
-
-      <asset>
-        <material name="{name}-" rgba="0.898039215686275 0.917647058823529 0.929411764705882 1" />
-        <material name="{name}-default_material" rgba="0.7 0.7 0.7 1" />
-        <material name="{name}-collision_material" rgba="1.0 0.28 0.1 0.9" />
-        <mesh name="{name}-astribot_torso_base_link.STL" file="{assets}/astribot_torso_base_link.STL" />
-        <mesh name="{name}-astribot_torso_link_1.STL" file="{assets}/astribot_torso_link_1.STL" />
-        <mesh name="{name}-astribot_torso_link_2.STL" file="{assets}/astribot_torso_link_2.STL" />
-        <mesh name="{name}-astribot_torso_link_3.STL" file="{assets}/astribot_torso_link_3.STL" />
-        <mesh name="{name}-astribot_torso_link_4.STL" file="{assets}/astribot_torso_link_4.STL" />
-        <mesh name="{name}-astribot_head_base_link.STL" file="{assets}/astribot_head_base_link.STL" />
-        <mesh name="{name}-astribot_head_link_1.STL" file="{assets}/astribot_head_link_1.STL" />
-        <mesh name="{name}-astribot_head_link_2.STL" file="{assets}/astribot_head_link_2.STL" />
-        <mesh name="{name}-astribot_arm_left_base_link.STL" file="{assets}/astribot_arm_left_base_link.STL" />
-        <mesh name="{name}-astribot_arm_link_1.STL" file="{assets}/astribot_arm_link_1.STL" />
-        <mesh name="{name}-astribot_arm_left_link_2.STL" file="{assets}/astribot_arm_left_link_2.STL" />
-        <mesh name="{name}-astribot_arm_link_3.STL" file="{assets}/astribot_arm_link_3.STL" />
-        <mesh name="{name}-astribot_arm_link_4.STL" file="{assets}/astribot_arm_link_4.STL" />
-        <mesh name="{name}-astribot_arm_link_5.STL" file="{assets}/astribot_arm_link_5.STL" />
-        <mesh name="{name}-astribot_arm_link_6.STL" file="{assets}/astribot_arm_link_6.STL" />
-        <mesh name="{name}-astribot_arm_link_7.STL" file="{assets}/astribot_arm_link_7.STL" />
-        <mesh name="{name}-astribot_gripper_base_link.STL" file="{assets}/astribot_gripper_base_link.STL" />
-        <mesh name="{name}-astribot_gripper_L1_Link.STL" file="{assets}/astribot_gripper_L1_Link.STL" />
-        <mesh name="{name}-astribot_gripper_L11_Link.STL" file="{assets}/astribot_gripper_L11_Link.STL" />
-        <mesh name="{name}-astribot_gripper_L2_Link.STL" file="{assets}/astribot_gripper_L2_Link.STL" />
-        <mesh name="{name}-astribot_gripper_R1_Link.STL" file="{assets}/astribot_gripper_R1_Link.STL" />
-        <mesh name="{name}-astribot_gripper_R11_Link.STL" file="{assets}/astribot_gripper_R11_Link.STL" />
-        <mesh name="{name}-astribot_gripper_R2_Link.STL" file="{assets}/astribot_gripper_R2_Link.STL" />
-        <mesh name="{name}-astribot_arm_right_base_link.STL" file="{assets}/astribot_arm_right_base_link.STL" />
-        <mesh name="{name}-astribot_arm_right_link_2.STL" file="{assets}/astribot_arm_right_link_2.STL" />
-      </asset>
+    <asset>
+      <mesh name="{name}-astribot_torso_base_link" content_type="model/stl" file="{assets}/astribot_torso_base_link.stl"/>
+      <mesh name="{name}-wheel_RF_Link" content_type="model/stl" file="{assets}/wheel_RF_Link.stl"/>
+      <mesh name="{name}-wheel_LF_Link" content_type="model/stl" file="{assets}/wheel_LF_Link.stl"/>
+      <mesh name="{name}-wheel_RR_Link" content_type="model/stl" file="{assets}/wheel_RR_Link.stl"/>
+      <mesh name="{name}-wheel_LR_Link" content_type="model/stl" file="{assets}/wheel_LR_Link.stl"/>
+      <mesh name="{name}-astribot_torso_link_1" content_type="model/stl" file="{assets}/astribot_torso_link_1.stl"/>
+      <mesh name="{name}-astribot_torso_link_2" content_type="model/stl" file="{assets}/astribot_torso_link_2.stl"/>
+      <mesh name="{name}-astribot_torso_link_3" content_type="model/stl" file="{assets}/astribot_torso_link_3.stl"/>
+      <mesh name="{name}-astribot_torso_link_4" content_type="model/stl" file="{assets}/astribot_torso_link_4.stl"/>
+      <mesh name="{name}-astribot_head_base_link" content_type="model/stl" file="{assets}/astribot_head_base_link.stl"/>
+      <mesh name="{name}-astribot_head_link_1" content_type="model/stl" file="{assets}/astribot_head_link_1.stl"/>
+      <mesh name="{name}-astribot_head_link_2" content_type="model/stl" file="{assets}/astribot_head_link_2.stl"/>
+      <mesh name="{name}-astribot_arm_left_base_link" content_type="model/stl" file="{assets}/astribot_arm_left_base_link.stl"/>
+      <mesh name="{name}-astribot_arm_right_base_link" content_type="model/stl" file="{assets}/astribot_arm_right_base_link.stl"/>
+      <mesh name="{name}-astribot_arm_link_1" content_type="model/stl" file="{assets}/astribot_arm_link_1.stl"/>
+      <mesh name="{name}-astribot_arm_left_link_2" content_type="model/stl" file="{assets}/astribot_arm_left_link_2.stl"/>
+      <mesh name="{name}-astribot_arm_link_3" content_type="model/stl" file="{assets}/astribot_arm_link_3.stl"/>
+      <mesh name="{name}-astribot_arm_link_4" content_type="model/stl" file="{assets}/astribot_arm_link_4.stl"/>
+      <mesh name="{name}-astribot_arm_link_5" content_type="model/stl" file="{assets}/astribot_arm_link_5.stl"/>
+      <mesh name="{name}-astribot_arm_link_6" content_type="model/stl" file="{assets}/astribot_arm_link_6.stl"/>
+      <mesh name="{name}-astribot_arm_link_7" content_type="model/stl" file="{assets}/astribot_arm_link_7.stl"/>
+      <mesh name="{name}-astribot_arm_right_link_2" content_type="model/stl" file="{assets}/astribot_arm_right_link_2.stl"/>
+      <mesh name="{name}-gripper_base_link" content_type="model/stl" file="{assets}/astribot_gripper_base_link.stl"/>
+      <mesh name="{name}-gripper_L1_Link" content_type="model/stl" file="{assets}/astribot_gripper_L1_Link.stl"/>
+      <mesh name="{name}-gripper_L11_Link" content_type="model/stl" file="{assets}/astribot_gripper_L11_Link.stl"/>
+      <mesh name="{name}-gripper_L2_Link" content_type="model/stl" file="{assets}/astribot_gripper_L2_Link.stl"/>
+      <mesh name="{name}-gripper_R1_Link" content_type="model/stl" file="{assets}/astribot_gripper_R1_Link.stl"/>
+      <mesh name="{name}-gripper_R11_Link" content_type="model/stl" file="{assets}/astribot_gripper_R11_Link.stl"/>
+      <mesh name="{name}-gripper_R2_Link" content_type="model/stl" file="{assets}/astribot_gripper_R2_Link.stl"/>
+    </asset>
     """
 
     template = """
-        <body name="{name}-astribot_torso_base" pos="0.00000000 0.00000000 0.10000000" quat="1 0 0 0" childclass="{childclass}-robot">
-          <joint name="{name}-floating_base" />
-          <geom name="{name}-astribot_torso_base_collision" pos="0 0 -0.05" quat="1.0 0.0 0.0 0.0" type="cylinder" size="0.3 0.05" class="{childclass}-collision" />
-          <geom name="{name}-astribot_torso_base_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_torso_base_link.STL" class="{childclass}-visual" />
-          <body name="{name}-astribot_torso_link_1" pos="0 0 0.12" quat="0.4999981633974483 -0.49999999999662686 0.49999999999662686 0.5000018366025516">
-            <joint name="{name}-astribot_torso_joint_1" type="hinge" ref="0.0" class="{childclass}-motor" range="-0.04 1.3" axis="0 0 1" />
-            <inertial pos="-0.15249 0.00021066 -0.0033476" quat="1.0 0.0 0.0 0.0" mass="7.3766" diaginertia="0.028834 0.1483 0.14268" />
-            <geom name="{name}-astribot_torso_link_1_collision" pos="-0.15 0 0" quat="0.7073882691671998 0.0 0.706825181105366 0.0" type="cylinder" size="0.1 0.15" class="{childclass}-collision" />
-            <geom name="{name}-astribot_torso_link_1_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_torso_link_1.STL" class="{childclass}-visual" />
-            <body name="{name}-astribot_torso_link_2" pos="-0.38 0 0" quat="1.0 0.0 0.0 0.0">
-              <joint name="{name}-astribot_torso_joint_2" type="hinge" ref="0.0" class="{childclass}-motor" range="-2.3 0.06" axis="0 0 1" />
-              <inertial pos="-0.22214 0.028873 0.00059024" quat="1.0 0.0 0.0 0.0" mass="5.6183" diaginertia="0.0082545 0.012677 0.017512" />
-              <geom name="{name}-astribot_torso_link_2_collision" pos="-0.15 0.03 0" quat="0.7018689904930883 0.08812324100427678 0.7013102958316921 -0.08819344385825831" type="cylinder" size="0.1 0.15" class="{childclass}-collision" />
-              <geom name="{name}-astribot_torso_link_2_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_torso_link_2.STL" class="{childclass}-visual" />
-              <body name="{name}-astribot_torso_link_3" pos="-0.390 0 0" quat="1.0 0.0 0.0 0.0">
-                <joint name="{name}-astribot_torso_joint_3" type="hinge" ref="0.0" class="{childclass}-motor" range="-0.4 2.3" axis="0 0 1" />
-                <inertial pos="-0.017519 0.00059523 0.00025821" quat="1.0 0.0 0.0 0.0" mass="0.49013" diaginertia="0.00022212 0.00036522 0.00038039" />
-                <geom name="{name}-astribot_torso_link_3_collision" pos="-0.18 0.01 0" quat="0.7073882691671998 0.0 0.706825181105366 0.0" type="cylinder" size="0.09 0.175" class="{childclass}-collision" />
-                <geom name="{name}-astribot_torso_link_3_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_torso_link_3.STL" class="{childclass}-visual" />
-                <body name="{name}-astribot_torso_link_4" pos="0 0 0" quat="0.4999981633974483 0.49999999999662686 -0.5000018366025516 -0.49999999999662686">
-                  <joint name="{name}-astribot_torso_joint_4" type="hinge" ref="0.0" class="{childclass}-motor" range="-1.2 1.2" axis="0 0 1" />
-                  <inertial pos="0.00476227191516749 -4.56966810241128E-05 0.242912573510671" quat="1.0 0.0 0.0 0.0" mass="3.55695635704638" diaginertia="0.0165768322563514 0.014904355097835 0.0110629318711333" />
-                  <geom name="{name}-astribot_torso_link_4_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_torso_link_4.STL" class="{childclass}-visual" />
-                  <body name="{name}-astribot_torso_end_effector" pos="0 0 0.34475" quat="1.0 0.0 0.0 0.0">
-                    <inertial pos="0 0 0" quat="1.0 0.0 0.0 0.0" mass="0" diaginertia="0.0 0.0 0.0" />
-                    <body name="{name}-astribot_head_base_link" pos="0 0 0.1229" quat="1.0 0.0 0.0 0.0">
-                      <inertial pos="-0.02816247 -0.00023176 -0.05211965" quat="1.0 0.0 0.0 0.0" mass="0.39541440" diaginertia="0.00036025 0.00049377 0.00074441" />
-                      <geom name="{name}-astribot_head_base_link_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_head_base_link.STL" class="{childclass}-visual" />
-                      <body name="{name}-astribot_head_link_1" pos="0 0 0" quat="1.0 0.0 0.0 0.0">
-                        <joint name="{name}-astribot_head_joint_1" type="hinge" ref="0.0" class="{childclass}-motor" range="-1.57 1.57" axis="0 0 1" />
-                        <inertial pos="0.00003191 -0.00038566 -0.02579910" quat="1.0 0.0 0.0 0.0" mass="0.13910581" diaginertia="4.567e-05 4.789e-05 3.779e-05" />
-                        <geom name="{name}-astribot_head_link_1_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_head_link_1.STL" class="{childclass}-visual" />
-                        <body name="{name}-astribot_head_link_2" pos="0 0 0" quat="0.7071054825112363 -0.7071080798594735 0.0 0.0">
-                          <joint name="{name}-astribot_head_joint_2" type="hinge" ref="0.0" class="{childclass}-motor" range="-1.22 1.22" axis="0 0 1" />
-                          <inertial pos="0.00705824 -0.14472601 -0.00061724" quat="1.0 0.0 0.0 0.0" mass="0.97012447" diaginertia="0.0055566 0.00151908 0.00544493" />
-                          <geom name="{name}-astribot_head_link_2_collision" pos="0 -0.15 0" quat="1.0 0.0 0.0 0.0" type="sphere" size="0.11" class="{childclass}-collision" />
-                          <geom name="{name}-astribot_head_link_2_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_head_link_2.STL" class="{childclass}-visual" />
-                        </body>
-                      </body>
-                    </body>
-                    <body name="{name}-astribot_arm_left_base_link" pos="0 0.06449 0.02348" quat="0.5792280697080312 -0.40557964426794313 -0.4055796551354079 -0.5792280541876752">
-                      <inertial pos="-0.04309067 -0.01849796 -0.01384838" quat="1.0 0.0 0.0 0.0" mass="2.22887320" diaginertia="0.00386389 0.00306042 0.00570294" />
-                      <geom name="{name}-astribot_arm_left_base_link_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_arm_left_base_link.STL" class="{childclass}-visual" />
-                      <body name="{name}-astribot_arm_left_link_1" pos="0 0 0.091" quat="1.0 0.0 0.0 0.0">
-                        <joint name="{name}-astribot_arm_left_joint_1" type="hinge" ref="0.0" class="{childclass}-motor" range="-3.1 3.1" axis="0 0 1" />
-                        <inertial pos="0.00012026 0.00047499 -0.05682561" quat="1.0 0.0 0.0 0.0" mass="0.59936716" diaginertia="0.00064791 0.00065264 0.00050137" />
-                        <geom name="{name}-astribot_arm_left_link_1_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_arm_link_1.STL" class="{childclass}-visual" />
-                        <body name="{name}-astribot_arm_left_link_2" pos="0 0 0" quat="0.7071054825112363 0.7071080798594735 0.0 0.0">
-                          <joint name="{name}-astribot_arm_left_joint_2" type="hinge" ref="0.0" class="{childclass}-motor" range="-1.53 0.46" axis="0 0 1" />
-                          <inertial pos="-0.00396228 0.03490708 0.04270156" quat="1.0 0.0 0.0 0.0" mass="1.43694657" diaginertia="0.00360751 0.00283747 0.00172927" />
-                          <geom name="{name}-astribot_arm_left_link_2_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_arm_left_link_2.STL" class="{childclass}-visual" />
-                          <body name="{name}-astribot_arm_left_link_3" pos="0 0.05 0" quat="0.4999981633974483 0.49999999999662686 -0.5000018366025516 -0.49999999999662686">
-                            <joint name="{name}-astribot_arm_left_joint_3" type="hinge" ref="0.0" class="{childclass}-motor" range="-3.1 3.1" axis="0 0 1" />
-                            <inertial pos="0.00531263 0.00020707 0.16136713" quat="1.0 0.0 0.0 0.0" mass="2.0926399" diaginertia="0.01752179 0.01784671 0.0021843" />
-                            <geom name="{name}-astribot_arm_left_link_3_collision" pos="0 0 0.15" quat="1.0 0.0 0.0 0.0" type="cylinder" size="0.05 0.09" class="{childclass}-collision" />
-                            <geom name="{name}-astribot_arm_left_link_3_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_arm_link_3.STL" class="{childclass}-visual" />
-                            <body name="{name}-astribot_arm_left_link_4" pos="0.03 0 0.309" quat="0.7071054825112363 -0.7071080798594735 0.0 0.0">
-                              <joint name="{name}-astribot_arm_left_joint_4" type="hinge" ref="0.0" class="{childclass}-motor" range="-0.06 2.61" axis="0 0 1" />
-                              <inertial pos="0.00017294 -0.01269315 0.00196140" quat="1.0 0.0 0.0 0.0" mass="0.36587933" diaginertia="0.00047693 0.00036801 0.00050082" />
-                              <geom name="{name}-astribot_arm_left_link_4_collision" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="sphere" size="0.06" class="{childclass}-collision" />
-                              <geom name="{name}-astribot_arm_left_link_4_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_arm_link_4.STL" class="{childclass}-visual" />
-                              <body name="{name}-astribot_arm_left_link_5" pos="0 0 0" quat="0.7071054825112363 0.7071080798594735 0.0 0.0">
-                                <joint name="{name}-astribot_arm_left_joint_5" type="hinge" ref="0.0" class="{childclass}-motor" range="-2.56 2.56" axis="0 0 1" />
-                                <inertial pos="-0.00032037 -0.00015185 0.15370447" quat="1.0 0.0 0.0 0.0" mass="1.24085064" diaginertia="0.00454092 0.00438922 0.00079442" />
-                                <geom name="{name}-astribot_arm_left_link_5_collision" pos="0 0 0.14" quat="1.0 0.0 0.0 0.0" type="cylinder" size="0.05 0.07" class="{childclass}-collision" />
-                                <geom name="{name}-astribot_arm_left_link_5_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_arm_link_5.STL" class="{childclass}-visual" />
-                                <body name="{name}-astribot_arm_left_link_6" pos="0 0 0.277" quat="0.7071054825112363 -0.7071080798594735 0.0 0.0">
-                                  <joint name="{name}-astribot_arm_left_joint_6" type="hinge" ref="0.0" class="{childclass}-motor" range="-0.76 0.76" axis="0 0 1" />
-                                  <inertial pos="-0.00010311 0.00001218 0.00013181" quat="1.0 0.0 0.0 0.0" mass="0.22465307" diaginertia="0.00016474 0.00015608 8.555e-05" />
-                                  <geom name="{name}-astribot_arm_left_link_6_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_arm_link_6.STL" class="{childclass}-visual" />
-                                  <body name="{name}-astribot_arm_left_link_7" pos="0 0 0" quat="0.7071054825112363 0.0 0.7071080798594735 0.0">
-                                    <joint name="{name}-astribot_arm_left_joint_7" type="hinge" ref="0.0" class="{childclass}-motor" range="-1.53 1.53" axis="0 0 1" />
-                                    <inertial pos="4.333e-05 -0.00723447 -0.00362428" quat="1.0 0.0 0.0 0.0" mass="0.12772019" diaginertia="0.00013672 0.00010783 5.858e-05" />
-                                    <geom name="{name}-astribot_arm_left_link_7_collision" pos="0.006 0 0" quat="1.0 0.0 0.0 0.0" type="sphere" size="0.05" class="{childclass}-collision" />
-                                    <geom name="{name}-astribot_arm_left_link_7_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_arm_link_7.STL" class="{childclass}-visual" />
-                                    <body name="{name}-astribot_gripper_left_base" pos="0 -0.045 0" quat="0.7071054825112363 0.7071080798594735 0.0 0.0">
-                                      <inertial pos="3.63816834670974E-05 -7.64937801344797E-05 0.0339715454089654" quat="1.0 0.0 0.0 0.0" mass="0.193542076585365" diaginertia="8.74128051113331e-05 0.000114384919729933 0.000110045585286976" />
-                                      <geom name="{name}-astribot_gripper_left_base_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_gripper_base_link.STL" class="{childclass}-visual" />
-                                      <body name="{name}-astribot_gripper_left_Link_L1" pos="0.013001 0 0.0537" quat="1.0 0.0 0.0 0.0">
-                                        <joint name="{name}-astribot_gripper_left_joint_L1" type="hinge" ref="0.0" class="{childclass}-motor" range="-1.57 1.57" axis="0 1 0" />
-                                        <inertial pos="0.0202603407008252 3.25769539416252E-07 0.0195138016274243" quat="1.0 0.0 0.0 0.0" mass="0.0126193026163599" diaginertia="4.00495011266377e-06 2.98446364943016e-06 4.36665411768987e-06" />
-                                        <geom name="{name}-astribot_gripper_left_Link_L1_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-default_material" type="mesh" mesh="{name}-astribot_gripper_L1_Link.STL" class="{childclass}-visual" />
-                                        <body name="{name}-astribot_gripper_left_Link_L11" pos="0.038 0 0.033" quat="1.0 0.0 0.0 0.0">
-                                          <joint name="{name}-astribot_gripper_left_joint_L11" type="hinge" ref="0.0" class="{childclass}-motor" range="-1.57 1.57" axis="0 1 0" />
-                                          <inertial pos="0.0078499983581578 2.30865069672272E-06 0.0261255438486819" quat="1.0 0.0 0.0 0.0" mass="0.0422679242486426" diaginertia="7.52065705546739e-06 6.23981721728218e-06 3.81260098942712e-06" />
-                                          <geom name="{name}-astribot_gripper_left_Link_L11_collision" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="{name}-astribot_gripper_L11_Link.STL" class="{childclass}-collision" />
-                                          <geom name="{name}-astribot_gripper_left_Link_L11_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-default_material" type="mesh" mesh="{name}-astribot_gripper_L11_Link.STL" class="{childclass}-visual" />
-                                        </body>
-                                      </body>
-                                      <body name="{name}-astribot_gripper_left_Link_L2" pos="0.033 0 0.0537" quat="1.0 0.0 0.0 0.0">
-                                        <joint name="{name}-astribot_gripper_left_joint_L2" type="hinge" ref="0.0" class="{childclass}-motor" range="-1.57 1.57" axis="0 1 0" />
-                                        <inertial pos="0.00995690697258714 1.76552698823303E-10 0.0110501818995788" quat="1.0 0.0 0.0 0.0" mass="0.0233645198811733" diaginertia="3.51398687886059e-06 8.26281821632449e-06 7.05331607908947e-06" />
-                                        <geom name="{name}-astribot_gripper_left_Link_L2_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-default_material" type="mesh" mesh="{name}-astribot_gripper_L2_Link.STL" class="{childclass}-visual" />
-                                      </body>
-                                      <body name="{name}-astribot_gripper_left_Link_R1" pos="-0.012999 0 0.0537" quat="1.0 0.0 0.0 0.0">
-                                        <joint name="{name}-astribot_gripper_left_joint_R1" type="hinge" ref="0.0" class="{childclass}-motor" range="-1.57 1.57" axis="0 1 0" />
-                                        <inertial pos="-0.0202603407007736 -3.25769539812667E-07 0.0195138016274777" quat="1.0 0.0 0.0 0.0" mass="0.0126193026163599" diaginertia="4.00495011267122e-06 2.98446364943016e-06 4.36665411768241e-06" />
-                                        <geom name="{name}-astribot_gripper_left_Link_R1_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-default_material" type="mesh" mesh="{name}-astribot_gripper_R1_Link.STL" class="{childclass}-visual" />
-                                        <body name="{name}-astribot_gripper_left_Link_R11" pos="-0.038 0 0.033" quat="1.0 0.0 0.0 0.0">
-                                          <joint name="{name}-astribot_gripper_left_joint_R11" type="hinge" ref="0.0" class="{childclass}-motor" range="-1.57 1.57" axis="0 1 0" />
-                                          <inertial pos="-0.00785031648408113 -2.30865069838854E-06 0.0261252819783987" quat="1.0 0.0 0.0 0.0" mass="0.0422679242485921" diaginertia="7.52064120010972e-06 6.23981721727655e-06 3.81261684477754e-06" />
-                                          <geom name="{name}-astribot_gripper_left_Link_R11_collision" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="{name}-astribot_gripper_R11_Link.STL" class="{childclass}-collision" />
-                                          <geom name="{name}-astribot_gripper_left_Link_R11_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-default_material" type="mesh" mesh="{name}-astribot_gripper_R11_Link.STL" class="{childclass}-visual" />
-                                        </body>
-                                      </body>
-                                      <body name="{name}-astribot_gripper_left_Link_R2" pos="-0.032999 0 0.0537" quat="1.0 0.0 0.0 0.0">
-                                        <joint name="{name}-astribot_gripper_left_joint_R2" type="hinge" ref="0.0" class="{childclass}-motor" range="-1.57 1.57" axis="0 1 0" />
-                                        <inertial pos="-0.00995690697253525 -1.76552690610476E-10 0.0110501818996256" quat="1.0 0.0 0.0 0.0" mass="0.0233645198811734" diaginertia="3.51398687889016e-06 8.26281821632449e-06 7.05331607905991e-06" />
-                                        <geom name="{name}-astribot_gripper_left_Link_R2_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-default_material" type="mesh" mesh="{name}-astribot_gripper_R2_Link.STL" class="{childclass}-visual" />
-                                      </body>
-                                    </body>
-                                  </body>
-                                </body>
-                              </body>
+    <body {attributes}>
+      <!--<camera name="third-person" pos="2.205 -1.936 2.187" xyaxes="0.657 0.754 -0.000 -0.354 0.308 0.883"/>-->
+      <camera name="third-person" pos="-1.904 -4.026 3.227" xyaxes="0.910 -0.415 0.000 0.183 0.401 0.898"/>
+      <inertial pos="-0.0076187 -0.0020711 0.013725" quat="0.019455 0.708067 -0.0183173 0.70564" mass="6.7123" diaginertia="0.148701 0.08243 0.079229"/>
+      <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_torso_base_link"/>
+      <body name="{name}-wheel_RF_Link" pos="0.216347 -0.216347 -0.015" quat="0.270599 0.65328 -0.2706 0.653282">
+        <inertial pos="2.7624e-07 -1.7583e-07 0.014539" quat="0.270598 0.653281 -0.270598 0.653281" mass="0.56418" diaginertia="0.0015639 0.000831884 0.000831876"/>
+        <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-wheel_RF_Link"/>
+      </body>
+      <body name="{name}-wheel_LF_Link" pos="0.216347 0.216347 -0.015" quat="0.270599 -0.65328 -0.2706 -0.653282">
+        <inertial pos="2.7617e-07 -1.7589e-07 0.014539" quat="0.270598 0.653281 -0.270598 0.653281" mass="0.56418" diaginertia="0.0015639 0.000831884 0.000831876"/>
+        <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-wheel_LF_Link"/>
+      </body>
+      <body name="{name}-wheel_RR_Link" pos="-0.216347 -0.211347 -0.015" quat="0.65328 0.270597 -0.653283 0.270598">
+        <inertial pos="-2.7619e-07 1.7583e-07 0.014539" quat="0.270598 0.653281 -0.270598 0.653281" mass="0.56418" diaginertia="0.0015639 0.000831884 0.000831876"/>
+        <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-wheel_RR_Link"/>
+      </body>
+      <body name="{name}-wheel_LR_Link" pos="-0.216347 0.211347 -0.015" quat="0.65328 -0.270597 -0.653283 -0.270598">
+        <inertial pos="0.0019998 -0.0070713 0.014539" quat="0.653281 0.270598 -0.653281 0.270598" mass="0.56418" diaginertia="0.0015639 0.000831884 0.000831876"/>
+        <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-wheel_LR_Link"/>
+      </body>
+      <body name="{name}-astribot_torso_link_1" pos="0 0 0.12" quat="0.499998 -0.5 0.5 0.500002">
+        <inertial pos="-0.15249 0.00021066 -0.0033476" quat="0.488335 0.4894 0.510843 0.510936" mass="7.3766" diaginertia="0.148533 0.14268 0.0286014"/>
+        <joint name="{name}-astribot_torso_joint_1" pos="0 0 0" axis="0 0 1" range="0 0.01"  limited="true"/>
+        <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_torso_link_1"/>
+        <body name="{name}-astribot_torso_link_2" pos="-0.38 0 0">
+          <inertial pos="-0.22214 0.028873 0.00059024" quat="0.0851505 0.715372 -0.0840248 0.688427" mass="5.6183" diaginertia="0.0175257 0.0129591 0.00795872"/>
+          <joint name="{name}-astribot_torso_joint_2" pos="0 0 0" axis="0 0 1" range="0 0.01"  limited="true"/>
+          <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_torso_link_2"/>
+          <body name="{name}-astribot_torso_link_3" pos="-0.39 0 0">
+            <inertial pos="-0.017519 0.00059523 0.00025821" quat="0.00834705 0.708024 0.00970003 0.706073" mass="0.49013" diaginertia="0.000380401 0.000365211 0.000222118"/>
+              <site name="{name}-hip" type="sphere" size="0.05" pos="0 0 0"/>
+            <joint name="{name}-astribot_torso_joint_3" pos="0 0 0" axis="0 0 1" range="-0.1 0.3"  limited="true"/>
+            <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_torso_link_3"/>
+            <body name="{name}-astribot_torso_link_4" quat="0.499998 0.5 -0.500002 -0.5">
+              <inertial pos="0.0012784 -5.5993e-05 0.27195" quat="0.996969 0.00493705 -0.0512405 -0.0583368" mass="4.53954" diaginertia="0.0365744 0.0324277 0.0165454"/>
+              <joint name="{name}-astribot_torso_joint_4" pos="0 0 0" axis="0 0 1" range="-0.45 0.45"  limited="true"/>
+              <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_torso_link_4"/>
+              <geom pos="0 0 0.46765" quat="1 0 0 0" type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_head_base_link"/>
+              <geom pos="0 0.06449 0.36823" quat="0.579228 -0.40558 -0.40558 -0.579228" type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_arm_left_base_link"/>
+              <geom pos="0 -0.06449 0.36823" quat="0.579228 0.40558 -0.40558 0.579228" type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_arm_right_base_link"/>
+              <body name="{name}-astribot_head_link_1" pos="0 0 0.46765">
+                <inertial pos="3.191e-05 -0.00038566 -0.0257991" quat="0.710346 -0.0335656 0.0294335 0.702436" mass="0.139106" diaginertia="4.79716e-05 4.56699e-05 3.77084e-05"/>
+                <joint name="{name}-astribot_head_joint_1" pos="0 0 0" axis="0 0 1" range="0.0 0.01" limited="true"/>
+                <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_head_link_1"/>
+                <body name="{name}-astribot_head_link_2" quat="0.707105 -0.707108 0 0">
+                  <inertial pos="0.00705824 -0.144726 -0.00061724" quat="0.696314 0.714797 -0.0643815 -0.00814535" mass="0.970124" diaginertia="0.00559994 0.00544762 0.00147305"/>
+                    <site name="{name}-head" type="sphere" size="0.01" pos="0 0 0"/>
+                  <joint name="{name}-astribot_head_joint_2" pos="0 0 0" axis="0 0 1" range="0.3 0.31" limited="true"/>
+                  <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_head_link_2"/>
+                  <camera name="astribot_head_left" pos="0.06 -0.16 0.035" quat="0 -0.707107 0 0.707107" fovy="60"/>
+                    <camera name="astribot_head_right" pos="0.06 -0.16 -0.035" quat="0 -0.707107 0 0.707107" fovy="60"/>
+                  <body name="{name}-astribot_head_camera_base_link" pos="0.09 0 0.08" quat="0 0 -1 0">
+                </body>
+                </body>
+              </body>
+              <body name="{name}-astribot_arm_left_link_1" pos="-2.29129e-09 0.150002 0.399354" quat="0.579228 -0.40558 -0.40558 -0.579228">
+                <inertial pos="-3.38727e-10 -8.2617e-10 -0.0532426" quat="0.707107 0 0 0.707107" mass="0.209778" diaginertia="0.000323596 0.000323124 7.65561e-05"/>
+                <joint name="{name}-astribot_arm_left_joint_1" pos="0 0 0" axis="0 0 1" range="-3.1 3.1" limited="true" damping="5" springref="0" stiffness="10"/> <!-- damping="5" springref="0" stiffness="600"/> -->
+                <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_arm_link_1"/>
+                <body name="{name}-astribot_arm_left_link_2" quat="0.707105 0.707108 0 0">
+                  <inertial pos="-0.0121217 0.0368181 -0.01357" quat="0.791518 0.59161 0.1486 -0.0376264" mass="0.457087" diaginertia="0.000807391 0.00073487 0.00052421"/>
+                  <joint name="{name}-astribot_arm_left_joint_2" pos="0 0 0" axis="0 0 1" range="-1.53 0.46" limited="true" damping="5" springref="0" stiffness="10"/> <!-- damping="5" springref="0" stiffness="120" -->
+                  <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_arm_left_link_2"/>
+                  <body name="{name}-astribot_arm_left_link_3" pos="0 0.05 0" quat="0.499998 0.5 -0.500002 -0.5">
+                    <inertial pos="0.011039 0.000213501 0.240357" quat="0.998444 -0.0037731 0.0555468 0.00311159" mass="0.494215" diaginertia="0.00242787 0.00227335 0.000529931"/>
+                    <joint name="{name}-astribot_arm_left_joint_3" pos="0 0 0" axis="0 0 1" range="-3.1 3.1" limited="true" damping="5" springref="-1.57" stiffness="10"/> <!-- damping="5" springref="-1.57" stiffness="600"/> -->
+                    <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_arm_link_3"/>
+                    <body name="{name}-astribot_arm_left_link_4" pos="0.03 0 0.309" quat="0.707105 -0.707108 0 0">
+                      <inertial pos="7.03915e-06 -0.0168079 -2.59557e-05" quat="0.499707 0.500293 -0.499963 0.500037" mass="0.0997012" diaginertia="0.000116272 9.25243e-05 6.45973e-05"/>
+                      <joint name="{name}-astribot_arm_left_joint_4" pos="0 0 0" axis="0 0 1" range="0.7 2.61" limited="true" damping="5"/> <!-- damping="5" -->
+                      <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_arm_link_4"/>
+                      <body name="{name}-astribot_arm_left_link_5" quat="0.707105 0.707108 0 0">
+                        <inertial pos="-0.000298311 -6.59706e-05 0.195471" quat="0.999978 -0.00282806 0.00595135 0.000919051" mass="0.294855" diaginertia="0.000598295 0.000503604 0.00018486"/>
+                        <joint name="{name}-astribot_arm_left_joint_5" pos="0 0 0" axis="0 0 1" range="-2.56 2.56" limited="true" damping="5"/> <!-- damping="5" -->
+                        <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_arm_link_5"/>
+                        <body name="{name}-astribot_arm_left_link_6" pos="0 0 0.277" quat="0.707105 -0.707108 0 0">
+                          <inertial pos="-1.38286e-05 -2.85328e-08 -1.00704e-08" quat="0.500001 0.499999 0.499999 0.500001" mass="0.0256707" diaginertia="1.67925e-05 1.38505e-05 6.16131e-06"/>
+                          <joint name="{name}-astribot_arm_left_joint_6" pos="0 0 0" axis="0 0 1" range="-3 3" limited="true" damping="5"/> <!-- damping="5" -->
+                          <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_arm_link_6"/>
+                          <body name="{name}-astribot_arm_left_link_7" quat="0.707105 0 0.707108 0">
+                            <inertial pos="0.000159114 -0.00122462 0.0544212" quat="0.996987 -0.0775686 -0.000749819 0.000654519" mass="0.738617" diaginertia="0.00194624 0.00124628 0.000900314"/>
+                            <joint name="{name}-astribot_arm_left_joint_7" pos="0 0 0" axis="0 0 1" range="-1.53 1.53" limited="true" damping="5"/> <!-- damping="5" -->
+                            <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_arm_link_7"/>
+                            <site name="{name}-arm_left_tool" pos="0 -0.15 0" type="sphere" size="0.01"/>
+                            <site name="{name}-force_torque_sensor_left" pos="0 0 0"/>
+                            <body name="{name}-astribot_arm_left_tool_link" pos="0 -0.048 0" quat="0.707107 0.707107 0 0">
+                                {left_end_effector}
                             </body>
                           </body>
                         </body>
                       </body>
                     </body>
-                    <body name="{name}-astribot_arm_right_base_link" pos="0 -0.06449 0.02348" quat="0.5792280697080312 0.40557964426794313 -0.4055796551354079 0.5792280541876752">
-                      <inertial pos="-0.04450932 0.01988693 0.00162589" quat="1.0 0.0 0.0 0.0" mass="2.22887320" diaginertia="0.00396811 0.00304615 0.00574641" />
-                      <geom name="{name}-astribot_arm_right_base_link_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_arm_right_base_link.STL" class="{childclass}-visual" />
-                      <body name="{name}-astribot_arm_right_link_1" pos="0 0 0.091" quat="1.0 0.0 0.0 0.0">
-                        <joint name="{name}-astribot_arm_right_joint_1" type="hinge" ref="0.0" class="{childclass}-motor" range="-3.1 3.1" axis="0 0 1" />
-                        <inertial pos="0.00012026 0.00047499 -0.05682561" quat="1.0 0.0 0.0 0.0" mass="0.59936716" diaginertia="0.00064791 0.00065264 0.00050137" />
-                        <geom name="{name}-astribot_arm_right_link_1_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_arm_link_1.STL" class="{childclass}-visual" />
-                        <body name="{name}-astribot_arm_right_link_2" pos="0 0 0" quat="0.7071054825112363 0.7071080798594735 0.0 0.0">
-                          <joint name="{name}-astribot_arm_right_joint_2" type="hinge" ref="0.0" class="{childclass}-motor" range="-1.53 0.46" axis="0 0 1" />
-                          <inertial pos="-0.00384709 0.03502105 -0.04050705" quat="1.0 0.0 0.0 0.0" mass="1.45811037" diaginertia="0.00394196 0.00316298 0.00177295" />
-                          <geom name="{name}-astribot_arm_right_link_2_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_arm_right_link_2.STL" class="{childclass}-visual" />
-                          <body name="{name}-astribot_arm_right_link_3" pos="0 0.05 0" quat="0.4999981633974483 0.49999999999662686 -0.5000018366025516 -0.49999999999662686">
-                            <joint name="{name}-astribot_arm_right_joint_3" type="hinge" ref="0.0" class="{childclass}-motor" range="-3.1 3.1" axis="0 0 1" />
-                            <inertial pos="0.00531263 0.00020707 0.16136713" quat="1.0 0.0 0.0 0.0" mass="2.0926399" diaginertia="0.01752179 0.01784671 0.0021843" />
-                            <geom name="{name}-astribot_arm_right_link_3_collision" pos="0 0 0.15" quat="1.0 0.0 0.0 0.0" type="cylinder" size="0.05 0.09" class="{childclass}-collision" />
-                            <geom name="{name}-astribot_arm_right_link_3_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_arm_link_3.STL" class="{childclass}-visual" />
-                            <body name="{name}-astribot_arm_right_link_4" pos="0.03 0 0.309" quat="0.7071054825112363 -0.7071080798594735 0.0 0.0">
-                              <joint name="{name}-astribot_arm_right_joint_4" type="hinge" ref="0.0" class="{childclass}-motor" range="-0.06 2.61" axis="0 0 1" />
-                              <inertial pos="0.00017294 -0.01269315 0.00196140" quat="1.0 0.0 0.0 0.0" mass="0.36587933" diaginertia="0.00047693 0.00036801 0.00050082" />
-                              <geom name="{name}-astribot_arm_right_link_4_collision" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="sphere" size="0.06" class="{childclass}-collision" />
-                              <geom name="{name}-astribot_arm_right_link_4_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_arm_link_4.STL" class="{childclass}-visual" />
-                              <body name="{name}-astribot_arm_right_link_5" pos="0 0 0" quat="0.7071054825112363 0.7071080798594735 0.0 0.0">
-                                <joint name="{name}-astribot_arm_right_joint_5" type="hinge" ref="0.0" class="{childclass}-motor" range="-2.56 2.56" axis="0 0 1" />
-                                <inertial pos="-0.00032037 -0.00015185 0.15370447" quat="1.0 0.0 0.0 0.0" mass="1.24085064" diaginertia="0.00454092 0.00438922 0.00079442" />
-                                <geom name="{name}-astribot_arm_right_link_5_collision" pos="0 0 0.14" quat="1.0 0.0 0.0 0.0" type="cylinder" size="0.05 0.07" class="{childclass}-collision" />
-                                <geom name="{name}-astribot_arm_right_link_5_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_arm_link_5.STL" class="{childclass}-visual" />
-                                <body name="{name}-astribot_arm_right_link_6" pos="0 0 0.277" quat="0.7071054825112363 -0.7071080798594735 0.0 0.0">
-                                  <joint name="{name}-astribot_arm_right_joint_6" type="hinge" ref="0.0" class="{childclass}-motor" range="-0.76 0.76" axis="0 0 1" />
-                                  <inertial pos="-0.00010311 0.00001218 0.00013181" quat="1.0 0.0 0.0 0.0" mass="0.22465307" diaginertia="0.00016474 0.00015608 8.555e-05" />
-                                  <geom name="{name}-astribot_arm_right_link_6_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_arm_link_6.STL" class="{childclass}-visual" />
-                                  <body name="{name}-astribot_arm_right_link_7" pos="0 0 0" quat="0.7071054825112363 0.0 0.7071080798594735 0.0">
-                                    <joint name="{name}-astribot_arm_right_joint_7" type="hinge" ref="0.0" class="{childclass}-motor" range="-1.53 1.53" axis="0 0 1" />
-                                    <inertial pos="4.333e-05 -0.00723447 -0.00362428" quat="1.0 0.0 0.0 0.0" mass="0.12772019" diaginertia="0.00013672 0.00010783 5.858e-05" />
-                                    <geom name="{name}-astribot_arm_right_link_7_collision" pos="0.006 0 0" quat="1.0 0.0 0.0 0.0" type="sphere" size="0.05" class="{childclass}-collision" />
-                                    <geom name="{name}-astribot_arm_right_link_7_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_arm_link_7.STL" class="{childclass}-visual" />
-                                    <body name="{name}-astribot_gripper_right_base" pos="0 -0.045 0" quat="0.7071054825112363 0.7071080798594735 0.0 0.0">
-                                      <inertial pos="3.63816834670974E-05 -7.64937801344797E-05 0.0339715454089654" quat="1.0 0.0 0.0 0.0" mass="0.193542076585365" diaginertia="8.74128051113331e-05 0.000114384919729933 0.000110045585286976" />
-                                      <geom name="{name}-astribot_gripper_right_base_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-" type="mesh" mesh="{name}-astribot_gripper_base_link.STL" class="{childclass}-visual" />
-                                      <body name="{name}-astribot_gripper_right_Link_L1" pos="0.013001 0 0.0537" quat="1.0 0.0 0.0 0.0">
-                                        <joint name="{name}-astribot_gripper_right_joint_L1" type="hinge" ref="0.0" class="{childclass}-motor" range="-1.57 1.57" axis="0 1 0" />
-                                        <inertial pos="0.0202603407008252 3.25769539416252E-07 0.0195138016274243" quat="1.0 0.0 0.0 0.0" mass="0.0126193026163599" diaginertia="4.00495011266377e-06 2.98446364943016e-06 4.36665411768987e-06" />
-                                        <geom name="{name}-astribot_gripper_right_Link_L1_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-default_material" type="mesh" mesh="{name}-astribot_gripper_L1_Link.STL" class="{childclass}-visual" />
-                                        <body name="{name}-astribot_gripper_right_Link_L11" pos="0.038 0 0.033" quat="1.0 0.0 0.0 0.0">
-                                          <joint name="{name}-astribot_gripper_right_joint_L11" type="hinge" ref="0.0" class="{childclass}-motor" range="-1.57 1.57" axis="0 1 0" />
-                                          <inertial pos="0.0078499983581578 2.30865069672272E-06 0.0261255438486819" quat="1.0 0.0 0.0 0.0" mass="0.0422679242486426" diaginertia="7.52065705546739e-06 6.23981721728218e-06 3.81260098942712e-06" />
-                                          <geom name="{name}-astribot_gripper_right_Link_L11_collision" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="{name}-astribot_gripper_L11_Link.STL" class="{childclass}-collision" />
-                                          <geom name="{name}-astribot_gripper_right_Link_L11_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-default_material" type="mesh" mesh="{name}-astribot_gripper_L11_Link.STL" class="{childclass}-visual" />
-                                        </body>
-                                      </body>
-                                      <body name="{name}-astribot_gripper_right_Link_L2" pos="0.033 0 0.0537" quat="1.0 0.0 0.0 0.0">
-                                        <joint name="{name}-astribot_gripper_right_joint_L2" type="hinge" ref="0.0" class="{childclass}-motor" range="-1.57 1.57" axis="0 1 0" />
-                                        <inertial pos="0.00995690697258714 1.76552698823303E-10 0.0110501818995788" quat="1.0 0.0 0.0 0.0" mass="0.0233645198811733" diaginertia="3.51398687886059e-06 8.26281821632449e-06 7.05331607908947e-06" />
-                                        <geom name="{name}-astribot_gripper_right_Link_L2_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-default_material" type="mesh" mesh="{name}-astribot_gripper_L2_Link.STL" class="{childclass}-visual" />
-                                      </body>
-                                      <body name="{name}-astribot_gripper_right_Link_R1" pos="-0.012999 0 0.0537" quat="1.0 0.0 0.0 0.0">
-                                        <joint name="{name}-astribot_gripper_right_joint_R1" type="hinge" ref="0.0" class="{childclass}-motor" range="-1.57 1.57" axis="0 1 0" />
-                                        <inertial pos="-0.0202603407007736 -3.25769539812667E-07 0.0195138016274777" quat="1.0 0.0 0.0 0.0" mass="0.0126193026163599" diaginertia="4.00495011267122e-06 2.98446364943016e-06 4.36665411768241e-06" />
-                                        <geom name="{name}-astribot_gripper_right_Link_R1_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-default_material" type="mesh" mesh="{name}-astribot_gripper_R1_Link.STL" class="{childclass}-visual" />
-                                        <body name="{name}-astribot_gripper_right_Link_R11" pos="-0.038 0 0.033" quat="1.0 0.0 0.0 0.0">
-                                          <joint name="{name}-astribot_gripper_right_joint_R11" type="hinge" ref="0.0" class="{childclass}-motor" range="-1.57 1.57" axis="0 1 0" />
-                                          <inertial pos="-0.00785031648408113 -2.30865069838854E-06 0.0261252819783987" quat="1.0 0.0 0.0 0.0" mass="0.0422679242485921" diaginertia="7.52064120010972e-06 6.23981721727655e-06 3.81261684477754e-06" />
-                                          <geom name="{name}-astribot_gripper_right_Link_R11_collision" pos="0 0 0" quat="1.0 0.0 0.0 0.0" type="mesh" mesh="{name}-astribot_gripper_R11_Link.STL" class="{childclass}-collision" />
-                                          <geom name="{name}-astribot_gripper_right_Link_R11_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-default_material" type="mesh" mesh="{name}-astribot_gripper_R11_Link.STL" class="{childclass}-visual" />
-                                        </body>
-                                      </body>
-                                      <body name="{name}-astribot_gripper_right_Link_R2" pos="-0.032999 0 0.0537" quat="1.0 0.0 0.0 0.0">
-                                        <joint name="{name}-astribot_gripper_right_joint_R2" type="hinge" ref="0.0" class="{childclass}-motor" range="-1.57 1.57" axis="0 1 0" />
-                                        <inertial pos="-0.00995690697253525 -1.76552690610476E-10 0.0110501818996256" quat="1.0 0.0 0.0 0.0" mass="0.0233645198811734" diaginertia="3.51398687889016e-06 8.26281821632449e-06 7.05331607905991e-06" />
-                                        <geom name="{name}-astribot_gripper_right_Link_R2_visual" pos="0 0 0" quat="1.0 0.0 0.0 0.0" material="{name}-default_material" type="mesh" mesh="{name}-astribot_gripper_R2_Link.STL" class="{childclass}-visual" />
-                                      </body>
-                                    </body>
-                                  </body>
-                                </body>
+                  </body>
+                </body>
+              </body>
+              <body name="{name}-astribot_arm_right_link_1" pos="-2.29129e-09 -0.150002 0.399354" quat="0.579228 0.40558 -0.40558 0.579228">
+                <inertial pos="-3.38727e-10 -8.2617e-10 -0.0532426" quat="0.707107 0 0 0.707107" mass="0.209778" diaginertia="0.000323596 0.000323124 7.65561e-05"/>
+                <joint name="{name}-astribot_arm_right_joint_1" pos="0 0 0" axis="0 0 1" range="-3.1 3.1" limited="true" damping="5"/>
+                <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_arm_link_1"/>
+                <body name="{name}-astribot_arm_right_link_2" quat="0.707105 0.707108 0 0">
+                  <inertial pos="-0.0121217 0.0368181 -0.01357" quat="0.791518 0.59161 0.1486 -0.0376264" mass="0.457087" diaginertia="0.000807391 0.00073487 0.00052421"/>
+                  <joint name="{name}-astribot_arm_right_joint_2" pos="0 0 0" axis="0 0 1" range="-0.46 0.46" limited="true" damping="5"/>
+                  <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_arm_right_link_2"/>
+                  <body name="{name}-astribot_arm_right_link_3" pos="0 0.05 0" quat="0.499998 0.5 -0.500002 -0.5">
+                    <inertial pos="0.011039 0.000213501 0.240357" quat="0.998444 -0.0037731 0.0555468 0.00311159" mass="0.494215" diaginertia="0.00242787 0.00227335 0.000529931"/>
+                    <joint name="{name}-astribot_arm_right_joint_3" pos="0 0 0" axis="0 0 1" range="-3.1 3.1" limited="true" damping="5" springref="1.57" stiffness="10"/>
+                    <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_arm_link_3"/>
+                    <body name="{name}-astribot_arm_right_link_4" pos="0.03 0 0.309" quat="0.707105 -0.707108 0 0">
+                      <inertial pos="7.03915e-06 -0.0168079 -2.59557e-05" quat="0.499707 0.500293 -0.499963 0.500037" mass="0.0997012" diaginertia="0.000116272 9.25243e-05 6.45973e-05"/>
+                      <joint name="{name}-astribot_arm_right_joint_4" pos="0 0 0" axis="0 0 1" range="0.5 2.61" limited="true"/>
+                      <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_arm_link_4"/>
+                      <body name="{name}-astribot_arm_right_link_5" quat="0.707105 0.707108 0 0">
+                        <inertial pos="-0.000298311 -6.59706e-05 0.195471" quat="0.999978 -0.00282806 0.00595135 0.000919051" mass="0.294855" diaginertia="0.000598295 0.000503604 0.00018486"/>
+                        <joint name="{name}-astribot_arm_right_joint_5" pos="0 0 0" axis="0 0 1" range="-2 2" limited="true"/>
+                        <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_arm_link_5"/>
+                        <body name="{name}-astribot_arm_right_link_6" pos="0 0 0.277" quat="0.707105 -0.707108 0 0">
+                          <inertial pos="-1.38286e-05 -2.85328e-08 -1.00704e-08" quat="0.500001 0.499999 0.499999 0.500001" mass="0.0256707" diaginertia="1.67925e-05 1.38505e-05 6.16131e-06"/>
+                          <joint name="{name}-astribot_arm_right_joint_6" pos="0 0 0" axis="0 0 1" range="-0.76 0.76" limited="true"/>
+                          <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_arm_link_6"/>
+                          <body name="{name}-astribot_arm_right_link_7" quat="0.707105 0 0.707108 0">
+                            <inertial pos="0.000159114 -0.00122462 0.0544212" quat="0.996987 -0.0775686 -0.000749819 0.000654519" mass="0.738617" diaginertia="0.00194624 0.00124628 0.000900314"/>
+                            <joint name="{name}-astribot_arm_right_joint_7" pos="0 0 0" axis="0 0 1" range="-1.53 1.53" limited="true"/>
+                            <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="{name}-astribot_arm_link_7"/>
+                            <site name="{name}-arm_right_tool" pos="0 -0.18 0" size="0.01" xyaxes="0 0 -1 1 0 0"/>
+                              <body name="{name}-astribot_arm_right_tool_link" pos="0 -0.048 0" quat="0.707107 0.707107 0 0">
+                                  <camera name="astribot_arm_right_effector" pos="0 0.16 -0.05" quat="1.28555e-06 3.28254e-07 0.968912 0.247404" fovy="60"/>
+                                    {right_end_effector}
                               </body>
-                            </body>
+                              <site name="{name}-force_torque_sensor_right" pos="0 0 0"/>
                           </body>
                         </body>
                       </body>
@@ -317,66 +225,30 @@ class AstriBot(MocapBody):
               </body>
             </body>
           </body>
-          <site name="{name}-astribot_torso_base_site" pos="0 0 0" quat="1 0 0 0" />
-          <camera name="{name}-front_camera" mode="track" fovy="90.0" quat="4.329780281177467e-17 4.329780281177466e-17 0.7071067811865475 0.7071067811865476" pos="0.0 2.0 0.5" />
-          <camera name="{name}-side_camera" mode="track" fovy="90.0" quat="-0.5 -0.4999999999999999 0.5 0.5000000000000001" pos="-2.0 0.0 0.5" />
         </body>
+      </body>
+    </body>
     """
 
-    _postamble = """
-      <actuator>
-        <motor name="{name}-astribot_torso_joint_1_ctrl" joint="{name}-astribot_torso_joint_1" class="{childclass}-motor" />
-        <motor name="{name}-astribot_torso_joint_2_ctrl" joint="{name}-astribot_torso_joint_2" class="{childclass}-motor" />
-        <motor name="{name}-astribot_torso_joint_3_ctrl" joint="{name}-astribot_torso_joint_3" class="{childclass}-motor" />
-        <motor name="{name}-astribot_torso_joint_4_ctrl" joint="{name}-astribot_torso_joint_4" class="{childclass}-motor" />
-        <motor name="{name}-astribot_head_joint_1_ctrl" joint="{name}-astribot_head_joint_1" class="{childclass}-motor" />
-        <motor name="{name}-astribot_head_joint_2_ctrl" joint="{name}-astribot_head_joint_2" class="{childclass}-motor" />
-        <motor name="{name}-astribot_arm_left_joint_1_ctrl" joint="{name}-astribot_arm_left_joint_1" class="{childclass}-motor" />
-        <motor name="{name}-astribot_arm_left_joint_2_ctrl" joint="{name}-astribot_arm_left_joint_2" class="{childclass}-motor" />
-        <motor name="{name}-astribot_arm_left_joint_3_ctrl" joint="{name}-astribot_arm_left_joint_3" class="{childclass}-motor" />
-        <motor name="{name}-astribot_arm_left_joint_4_ctrl" joint="{name}-astribot_arm_left_joint_4" class="{childclass}-motor" />
-        <motor name="{name}-astribot_arm_left_joint_5_ctrl" joint="{name}-astribot_arm_left_joint_5" class="{childclass}-motor" />
-        <motor name="{name}-astribot_arm_left_joint_6_ctrl" joint="{name}-astribot_arm_left_joint_6" class="{childclass}-motor" />
-        <motor name="{name}-astribot_arm_left_joint_7_ctrl" joint="{name}-astribot_arm_left_joint_7" class="{childclass}-motor" />
-        <motor name="{name}-astribot_gripper_left_joint_L1_ctrl" joint="{name}-astribot_gripper_left_joint_L1" class="{childclass}-motor" />
-        <motor name="{name}-astribot_gripper_left_joint_L11_ctrl" joint="{name}-astribot_gripper_left_joint_L11" class="{childclass}-motor" />
-        <motor name="{name}-astribot_gripper_left_joint_L2_ctrl" joint="{name}-astribot_gripper_left_joint_L2" class="{childclass}-motor" />
-        <motor name="{name}-astribot_gripper_left_joint_R1_ctrl" joint="{name}-astribot_gripper_left_joint_R1" class="{childclass}-motor" />
-        <motor name="{name}-astribot_gripper_left_joint_R11_ctrl" joint="{name}-astribot_gripper_left_joint_R11" class="{childclass}-motor" />
-        <motor name="{name}-astribot_gripper_left_joint_R2_ctrl" joint="{name}-astribot_gripper_left_joint_R2" class="{childclass}-motor" />
-        <motor name="{name}-astribot_arm_right_joint_1_ctrl" joint="{name}-astribot_arm_right_joint_1" class="{childclass}-motor" />
-        <motor name="{name}-astribot_arm_right_joint_2_ctrl" joint="{name}-astribot_arm_right_joint_2" class="{childclass}-motor" />
-        <motor name="{name}-astribot_arm_right_joint_3_ctrl" joint="{name}-astribot_arm_right_joint_3" class="{childclass}-motor" />
-        <motor name="{name}-astribot_arm_right_joint_4_ctrl" joint="{name}-astribot_arm_right_joint_4" class="{childclass}-motor" />
-        <motor name="{name}-astribot_arm_right_joint_5_ctrl" joint="{name}-astribot_arm_right_joint_5" class="{childclass}-motor" />
-        <motor name="{name}-astribot_arm_right_joint_6_ctrl" joint="{name}-astribot_arm_right_joint_6" class="{childclass}-motor" />
-        <motor name="{name}-astribot_arm_right_joint_7_ctrl" joint="{name}-astribot_arm_right_joint_7" class="{childclass}-motor" />
-        <motor name="{name}-astribot_gripper_right_joint_L1_ctrl" joint="{name}-astribot_gripper_right_joint_L1" class="{childclass}-motor" />
-        <motor name="{name}-astribot_gripper_right_joint_L11_ctrl" joint="{name}-astribot_gripper_right_joint_L11" class="{childclass}-motor" />
-        <motor name="{name}-astribot_gripper_right_joint_L2_ctrl" joint="{name}-astribot_gripper_right_joint_L2" class="{childclass}-motor" />
-        <motor name="{name}-astribot_gripper_right_joint_R1_ctrl" joint="{name}-astribot_gripper_right_joint_R1" class="{childclass}-motor" />
-        <motor name="{name}-astribot_gripper_right_joint_R11_ctrl" joint="{name}-astribot_gripper_right_joint_R11" class="{childclass}-motor" />
-        <motor name="{name}-astribot_gripper_right_joint_R2_ctrl" joint="{name}-astribot_gripper_right_joint_R2" class="{childclass}-motor" />
-      </actuator>
+    def __init__(self, *_children, left_end_effector:Xml=None, right_end_effector:Xml=None, head_mocap_quat=None, **kwargs):
+        super().__init__(*_children, **kwargs)
+        self.left_end_effector = left_end_effector
+        self.right_end_effector = right_end_effector
+        self._children = self._children + (left_end_effector, right_end_effector,)
 
-      <contact>
-        <exclude body1="{name}-astribot_torso_base" body2="{name}-astribot_torso_link_1" />
-        <exclude body1="{name}-astribot_torso_link_1" body2="{name}-astribot_torso_link_2" />
-        <exclude body1="{name}-astribot_torso_link_2" body2="{name}-astribot_torso_link_3" />
-        <exclude body1="{name}-astribot_arm_left_link_3" body2="{name}-astribot_arm_left_link_4" />
-        <exclude body1="{name}-astribot_arm_left_link_4" body2="{name}-astribot_arm_left_link_5" />
-        <exclude body1="{name}-astribot_arm_right_link_3" body2="{name}-astribot_arm_right_link_4" />
-        <exclude body1="{name}-astribot_arm_right_link_4" body2="{name}-astribot_arm_right_link_5" />
-      </contact>
+        self.head_mocap_pos = self._pos + [0, 0, 1.5]
+        # self.right_mocap_pos = self._pos + [0.45, -0.21, 0.75]
+        self.right_mocap_pos = self._pos + [0.06, -0.257, 0.58]
+        self.right_mocap_quat = " ".join([str(x) for x in [0.0664525, -0.865559, 0.142244, -0.475561]])
 
-      <sensor>
-        <framepos name="{name}-astribot_torso_base_site_pos" objtype="site" objname="{name}-astribot_torso_base_site" />
-        <framequat name="{name}-astribot_torso_base_site_quat" objtype="site" objname="{name}-astribot_torso_base_site" />
-        <framelinvel name="{name}-astribot_torso_base_site_linvel" objtype="site" objname="{name}-astribot_torso_base_site" />
-        <frameangvel name="{name}-astribot_torso_base_site_angvel" objtype="site" objname="{name}-astribot_torso_base_site" />
-        <velocimeter name="{name}-astribot_torso_base_site_vel" site="{name}-astribot_torso_base_site" />
-      </sensor>
-      """
+        self.left_mocap_pos = self._pos  + [0.06, 0.257, 0.58]
+        self.left_mocap_quat = " ".join([str(x) for x in [0.475561, -0.142244, -0.865559, 0.0664525]])
+
+        self.head_mocap_quat = " ".join([str(x) for x in head_mocap_quat] if head_mocap_quat else ["1", "0", "0", "0"])
+
+        values = self._format_dict()
+
+        self._mocaps = self._mocaps_raw.format(**values)
 
 if __name__ == '__main__':
     from vuer_mjcf.basic_components.mj_ground_plane import GroundPlane
@@ -387,7 +259,7 @@ if __name__ == '__main__':
     from os.path import basename, dirname, join, splitext
 
     ground = GroundPlane()
-    robot = AstriBot(
+    robot = Astribot(
         name="astribot",
         assets="."
     )
