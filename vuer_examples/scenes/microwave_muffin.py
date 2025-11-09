@@ -16,7 +16,7 @@ Run this example:
     python -m vuer_mjcf.vuer_examples.scenes.microwave_muffin
 """
 
-from vuer_mjcf.vuer_examples.viewer import load_scene
+from vuer_examples.viewer import load_scene
 
 
 def main():

@@ -15,7 +15,7 @@ Run this example:
     python -m vuer_mjcf.vuer_examples.scenes.push_t
 """
 
-from vuer_mjcf.vuer_examples.viewer import load_scene
+from vuer_examples.viewer import load_scene
 
 
 def main():
