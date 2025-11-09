@@ -13,11 +13,14 @@ Or import and use directly from scene examples.
 import os
 import sys
 import shutil
+import tempfile
 from asyncio import sleep
 from importlib import import_module
 from os.path import join
+from pathlib import Path
 from typing import List, Literal
 
+import numpy as np
 from params_proto import ARGS, Flag, ParamsProto, Proto
 
 
@@ -33,7 +36,6 @@ class ViewerParams(ParamsProto, cli_parse=False):
 
     # Asset paths
     assets: str = Proto("{name}", help="Asset directory path")
-    entry_file: str = Proto("{name}.mjcf.xml", help="Entry XML file name")
     asset_prefix: str = Proto("http://localhost:{vuer_port}/static", help="Asset URL prefix")
 
     # MuJoCo configuration
@@ -76,7 +78,8 @@ def create_mujoco_component(params: ViewerParams):
 
     # Collect asset paths
     asset_folder = params.assets
-    assets = collect_asset_paths(params.entry_file)
+    path = build_xml(params,return_path=True)
+    assets = collect_asset_paths(path)
     asset_paths = [join(params.asset_prefix, params.assets, asset) for asset in assets]
 
     if params.verbose:
@@ -117,10 +120,13 @@ def create_mujoco_component(params: ViewerParams):
         )
 
     # Create MuJoCo component
+    # Include init_keyframe if it was loaded from YAML
+    init_keyframe = getattr(params, '_init_keyframe', {})
+
     return MuJoCo(
         *actuators,
         key="viewer-sim",
-        src=params.asset_prefix + "/" + params.entry_file,
+        src=params.asset_prefix + "/" + path.name,
         assets=asset_paths,
         frameKeys=params.frame_keys,
         pause=True,
@@ -129,8 +135,44 @@ def create_mujoco_component(params: ViewerParams):
         mocapHandleSize=0.05,
         mocapHandleWireframe=True,
         fps=params.fps,
+        **init_keyframe,
     )
 
+def build_xml(params, return_path=False):
+    """Build XML from factory function."""
+    module_name, fn_name = params.factory_fn.rsplit(":", 1)
+
+    # Auto-reload module for hot reloading during development
+    if module_name in sys.modules:
+        del sys.modules[module_name]
+
+    m = import_module(module_name)
+    xml = getattr(m, fn_name)(dual_gripper=(params.actuators == "duo"))
+
+    # Export XML and assets
+    export_dir = join(os.getcwd(), f"{params.name}_export")
+    assets_dir = join(export_dir, "assets")
+    os.makedirs(assets_dir, exist_ok=True)
+
+    # Save XML file
+    xml_path_local = join(export_dir, f"{params.name}.mjcf.xml")
+    with open(xml_path_local, "w") as f:
+        f.write(xml)
+    if return_path:
+        return Path(xml_path_local)
+
+    # Copy assets
+    from vuer_mjcf.utils.collect_asset_paths import collect_asset_paths
+    assets = collect_asset_paths(xml_path_local)
+    for asset in assets:
+        src_path = join(params.assets, asset)
+        dst_path = join(assets_dir, asset)
+        os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+        if os.path.exists(src_path):
+            shutil.copy2(src_path, dst_path)
+
+
+    return xml
 
 def load_scene(
     factory_fn: str,
@@ -179,48 +221,12 @@ def load_scene(
         print(f"Port: {params.vuer_port}")
 
     # Create Vuer server with static file serving
-    vuer = Vuer(static_root=".", port=params.vuer_port)
+    vuer = Vuer(static_root="..", port=params.vuer_port)
 
     # Add dynamic route for XML generation
     xml_path = "/static/" + params.name + ".mjcf.xml"
 
-    def build_xml():
-        """Build XML from factory function."""
-        module_name, fn_name = params.factory_fn.rsplit(":", 1)
-
-        # Auto-reload module for hot reloading during development
-        if module_name in sys.modules:
-            del sys.modules[module_name]
-
-        m = import_module(module_name)
-        xml = getattr(m, fn_name)(dual_gripper=(params.actuators == "duo"))
-
-        # Export XML and assets
-        export_dir = join(os.getcwd(), f"{params.name}_export")
-        assets_dir = join(export_dir, "assets")
-        os.makedirs(assets_dir, exist_ok=True)
-
-        # Save XML file
-        xml_path_local = join(export_dir, f"{params.name}.mjcf.xml")
-        with open(xml_path_local, "w") as f:
-            f.write(xml)
-
-        # Copy assets
-        from vuer_mjcf.utils.collect_asset_paths import collect_asset_paths
-        assets = collect_asset_paths(params.entry_file)
-        for asset in assets:
-            src_path = join(params.assets, asset)
-            dst_path = join(assets_dir, asset)
-            os.makedirs(os.path.dirname(dst_path), exist_ok=True)
-            if os.path.exists(src_path):
-                shutil.copy2(src_path, dst_path)
-
-        if verbose:
-            print(f"Exported XML to {xml_path_local} with {len(assets)} assets")
-
-        return xml
-
-    vuer.add_route(xml_path, build_xml)
+    vuer.add_route(xml_path, lambda: build_xml(params))
 
     # Print connection URL
     print(f"\nVuer Viewer Running!")
@@ -238,9 +244,108 @@ def load_scene(
         if verbose:
             print("MuJoCo plugin loaded")
 
+    last_frame = None
+
+    @vuer.add_handler("ON_MUJOCO_FRAME")
+    async def on_frame(event, proxy: VuerSession):
+        """Capture the latest frame for recording initial state."""
+        nonlocal last_frame
+        last_frame = event.value.get("keyFrame")
+
+    async def handle_reset(proxy: VuerSession):
+        """Reset the scene by reloading the MuJoCo component with saved keyframe if available."""
+        if verbose:
+            print("Reset button pressed - reloading scene...")
+
+        import yaml
+        from pathlib import Path
+
+        # Try to load saved keyframe from {name}.frame.yaml
+        frame_file = Path(f"{params.name}.frame.yaml")
+
+        if frame_file.exists():
+            try:
+                with open(frame_file, "r") as f:
+                    keyframes = yaml.load(f, Loader=yaml.FullLoader)
+
+                if keyframes and len(keyframes) > 0:
+                    # Use the last keyframe
+                    last_keyframe = keyframes[-1]
+
+                    # Extract relevant keys for initialization
+                    init_keyframe = {
+                        k: np.array(v)
+                        for k, v in last_keyframe.items()
+                        if k in ["qpos", "qvel", "mocap_pos", "mocap_quat", "ctrl"]
+                    }
+
+                    if verbose:
+                        print(f"Loaded keyframe from {frame_file}")
+                        print(f"Keys: {list(init_keyframe.keys())}")
+
+                    # Update params with the saved keyframe
+                    # We need to pass this to the MuJoCo component
+                    # Store it temporarily in a way create_mujoco_component can access it
+                    params._init_keyframe = init_keyframe
+                else:
+                    params._init_keyframe = {}
+
+            except Exception as e:
+                if verbose:
+                    print(f"Error loading keyframe: {e}")
+                params._init_keyframe = {}
+        else:
+            params._init_keyframe = {}
+
+        proxy.upsert @ create_mujoco_component(params)
+
+        if verbose:
+            print("Scene reset complete!")
+
+    async def handle_record(proxy: VuerSession):
+        """Record the current pose as initial state."""
+        nonlocal last_frame
+
+        if last_frame is None:
+            print("No frame data available to record")
+            return
+
+        import yaml
+        from pathlib import Path
+
+        # Save to {name}.frame.yaml
+        frame_file = Path(f"{params.name}.frame.yaml")
+
+        if verbose:
+            print(f"Recording initial pose to {frame_file}")
+
+        # Append to yaml file
+        yaml_content = yaml.dump([last_frame], default_flow_style=False)
+
+        if frame_file.exists():
+            with open(frame_file, "a") as f:
+                f.write(yaml_content)
+        else:
+            with open(frame_file, "w") as f:
+                f.write(yaml_content)
+
+        print(f"Initial pose saved to {frame_file}")
+
+    @vuer.add_handler("ON_CLICK")
+    async def on_click(event, proxy: VuerSession):
+        """Handle button click events."""
+        key = event.value.get("key")
+
+        if key == "reset-button":
+            await handle_reset(proxy)
+            print(f"Scene reset")
+        elif key == "record-button":
+            await handle_record(proxy)
+
     @vuer.spawn(start=True)
     async def main_loop(proxy: VuerSession):
         nonlocal is_loaded
+        from vuer.schemas import Box, Html, Sphere, group, span
 
         # Wait for plugin to load (with timeout)
         timeout = 10.0
@@ -259,6 +364,42 @@ def load_scene(
 
         if verbose:
             print("Scene loaded successfully!")
+
+        # Add reset button
+        proxy.upsert @ group(
+            Html(
+                span("reset scene"),
+                key="reset-label",
+                style={"top": 30, "width": 700, "fontSize": 20},
+            ),
+            Box(
+                args=[0.25, 0.25, 0.25],
+                key="reset-button",
+                material={"color": "#23aaff"},
+            ),
+            key="reset-button",
+            position=[-0.4, 1.4, -1],
+        )
+
+        # Add record initial pose button
+        proxy.upsert @ group(
+            Html(
+                span("record initial pose"),
+                key="record-label",
+                style={"top": 30, "width": 150, "fontSize": 20},
+            ),
+            Sphere(
+                args=[0.1, 32, 16],
+                key="record-button",
+                material={"color": "red"},
+            ),
+            key="record-button",
+            position=[0.4, 1.4, -1],
+        )
+
+        if verbose:
+            print("Reset button added at position [-0.4, 1.4, -1]")
+            print("Record button added at position [0.4, 1.4, -1]")
 
         # Keep the server running
         while True:
@@ -298,6 +439,7 @@ if __name__ == "__main__":
     # Set default parameters for easy testing
     # Comment out or modify these to try different scenes
 
+    ViewerParams.assets = "assets"
     # Simple example (default)
     ViewerParams.factory_fn = "vuer_mjcf.tasks.pick_place:make_schema"
     ViewerParams.name = "pick_place"
@@ -334,14 +476,8 @@ if __name__ == "__main__":
     # ViewerParams.actuators = "none"
 
     # ViewerParams.factory_fn = "vuer_mjcf.tasks.tri_demo_kitchen_room_shadow_hands:make_schema"
-    # ViewerParams.name = "shadow_hands_kitchen"
+    # ViewerParams.name = "tri_demo_kitchen_room_shadow_handsnow pl"
     # ViewerParams.actuators = "none"
-
-    # Optional: Enable verbose output
-    # ViewerParams.verbose = True
-
-    # Optional: Enable lights (may reduce performance)
-    # ViewerParams.show_lights = True
 
     # Optional: Change port
     # ViewerParams.vuer_port = 8013
