@@ -1,11 +1,11 @@
-# Welcome to Vuer-MJCF
+# Welcome to Vuer_MJCF
 
-**Vuer-MJCF** is a Python schema system for building MuJoCo MJCF (Model XML) files programmatically. It provides a clean, composable API for creating robot environments, scenes, and simulations for use with MuJoCo and Lucid-XR.
+**Vuer_MJCF** is a Python schema system for building MuJoCo MJCF (Model XML) files programmatically. It provides a clean, composable API for creating robot environments, scenes, and simulations for use with MuJoCo and Lucid-XR.
 
 ## Installation
 
 ```shell
-pip install vuer-mjcf
+pip install vuer_mjcf
 ```
 
 ## Quick Start
@@ -72,7 +72,7 @@ Pre-built components for common use cases:
    :titlesonly:
 
    Quick Start <quick_start>
-   Report Issues <https://github.com/vuer-ai/vuer-mjcf/issues>
+   Report Issues <https://github.com/vuer-ai/vuer_mjcf/issues>
 
 .. toctree::
    :maxdepth: 2
@@ -95,10 +95,10 @@ Pre-built components for common use cases:
 
 ## Getting Help
 
-- **GitHub Issues**: [Report bugs or request features](https://github.com/vuer-ai/vuer-mjcf/issues)
+- **GitHub Issues**: [Report bugs or request features](https://github.com/vuer-ai/vuer_mjcf/issues)
 - **Documentation**: This site contains comprehensive API documentation and examples
 - **Examples**: Check the `vuer_mjcf/mujoco_examples/` directory for more examples
 
 ## License
 
-Vuer-MJCF is open source software licensed under the MIT License.
+Vuer_MJCF is open source software licensed under the MIT License.

@@ -67,8 +67,8 @@ class FloatingUfactoryGripper(Mjcf):
     </asset>
     """
 
-    def __init__(self, *_children, assets="assets", dual_gripper=False, camera_rig=None, free_joint=True, quat=None, **kwargs):
-        super().__init__(*_children, assets=assets, **kwargs)
+    def __init__(self, *_children,  dual_gripper=False, camera_rig=None, free_joint=True, quat=None, **kwargs):
+        super().__init__(*_children, **kwargs)
 
         if camera_rig is None:
             camera_rig = make_camera_rig(self._pos)
@@ -78,7 +78,7 @@ class FloatingUfactoryGripper(Mjcf):
 
         # Create first gripper
         gripper = UfactoryGripper(
-            assets="ufactory_xarm7",
+            assets="robots/ufactory_xarm7",
             attributes={"name": "gripper"},
             pos=self._pos + [0, 0, 0.3] if not dual_gripper else self._pos + [0, 0.15, 0.3],
             quat=quat_input,
@@ -97,7 +97,7 @@ class FloatingUfactoryGripper(Mjcf):
 
         if dual_gripper:
             gripper_2 = UfactoryGripper(
-                assets="ufactory_xarm7",
+                assets="robots/ufactory_xarm7",
                 attributes={"name": "gripper-2"},
                 pos=self._pos + [0, -0.15, 0.3],
                 quat=[0, 0, 1, 0],
@@ -132,7 +132,7 @@ def make_schema(**options):
 
     assets = str(Path(__file__).parent.parent.parent / "assets")
     ground = GroundPlane()
-    scene = FloatingUfactoryGripper(ground, assets=assets, **options)
+    scene = FloatingUfactoryGripper(ground, **options)
 
     return scene._xml | Prettify()
 

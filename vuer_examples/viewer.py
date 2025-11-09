@@ -440,6 +440,7 @@ if __name__ == "__main__":
     # Comment out or modify these to try different scenes
 
     ViewerParams.assets = "assets"
+    ViewerParams.verbose = True
     # Simple example (default)
     ViewerParams.factory_fn = "vuer_mjcf.tasks.pick_place:make_schema"
     ViewerParams.name = "pick_place"

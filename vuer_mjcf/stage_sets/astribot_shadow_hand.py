@@ -35,7 +35,7 @@ class AstribotHand(Mjcf):
     def __init__(
         self,
         *_children,
-        assets="assets",
+        
         dual_robot=False,
         camera_rig=None,
         head_quat=None,
@@ -43,7 +43,7 @@ class AstribotHand(Mjcf):
         mocap_quat=None,
         **kwargs,
     ):
-        super().__init__(*_children, assets=assets, **kwargs)
+        super().__init__(*_children, **kwargs)
 
         if mocap_pos is None:
             mocap_pos="0.3205938935279846 0.01334109716117382 1.215453326702118"
@@ -115,7 +115,7 @@ def make_schema(**options):
 
     assets = str(Path(__file__).parent.parent.parent / "assets")
     ground = GroundPlane()
-    scene = AstribotHand(ground, assets=assets, **options)
+    scene = AstribotHand(ground, **options)
 
     return scene._xml | Prettify()
 

@@ -11,7 +11,7 @@ Script to refactor all task files:
 import re
 from pathlib import Path
 
-TASKS_DIR = Path("/Users/yajvanravan/fortyfive/vuer-mjcf/vuer_mjcf/tasks")
+TASKS_DIR = Path("/Users/yajvanravan/fortyfive/vuer_mjcf/vuer_mjcf/tasks")
 
 # Template for new __main__ block
 NEW_MAIN_TEMPLATE = '''if __name__ == "__main__":

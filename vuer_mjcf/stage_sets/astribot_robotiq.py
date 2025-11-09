@@ -35,7 +35,7 @@ class AstribotRobotiq2f85(Mjcf):
     def __init__(
         self,
         *_children,
-        assets="assets",
+        
         dual_robot=False,
         camera_rig=None,
         head_quat=None,
@@ -45,7 +45,7 @@ class AstribotRobotiq2f85(Mjcf):
         left_mocap_quat=None,
         **kwargs,
     ):
-        super().__init__(*_children, assets=assets, **kwargs)
+        super().__init__(*_children, **kwargs)
 
         # if right_mocap_pos is None:
         #     right_mocap_pos="0.3205938935279846 0.01334109716117382 1.215453326702118"
@@ -123,7 +123,7 @@ def make_schema(**options):
 
     assets = str(Path(__file__).parent.parent.parent / "assets")
     ground = GroundPlane()
-    scene = AstribotRobotiq2f85(ground, assets=assets, **options)
+    scene = AstribotRobotiq2f85(ground, **options)
 
     return scene._xml | Prettify()
 

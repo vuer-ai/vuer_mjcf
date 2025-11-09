@@ -31,8 +31,8 @@ class FloatingShadowHand(Mjcf):
     # <geom type="plane" size="1 1 .01" pos="0 0 1.21" rgba="1 1 1 1"/>
     # """
 
-    def __init__(self, *_children, assets="assets", bimanual=True, camera_rig=None, **kwargs):
-        super().__init__(*_children, assets=assets, **kwargs)
+    def __init__(self, *_children,  bimanual=True, camera_rig=None, **kwargs):
+        super().__init__(*_children, **kwargs)
         if camera_rig is None:
             camera_rig = make_camera_rig(self._pos)
         light_rig = make_lighting_rig(self._pos)
@@ -75,7 +75,7 @@ def make_schema(**options):
 
     assets = str(Path(__file__).parent.parent.parent / "assets")
     ground = GroundPlane()
-    scene = FloatingShadowHand(ground, assets=assets, **options)
+    scene = FloatingShadowHand(ground, **options)
 
     return scene._xml | Prettify()
 

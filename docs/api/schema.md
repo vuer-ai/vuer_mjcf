@@ -275,7 +275,7 @@ gripper._add_mocaps()
 
 ## Composition Pattern
 
-vuer-mjcf uses a compositional approach where complex scenes are built from simple components:
+vuer_mjcf uses a compositional approach where complex scenes are built from simple components:
 
 ```python
 from vuer_mjcf.schema import Mjcf, Body, Raw

@@ -207,7 +207,7 @@ python -m vuer_examples.viewer --vuer_port 8013
 
 **VR not connecting**: Check that your browser supports WebXR
 
-**Import errors**: Make sure vuer-mjcf is installed: `pip install -e .`
+**Import errors**: Make sure vuer_mjcf is installed: `pip install -e .`
 
 ## Directory Structure
 
@@ -231,7 +231,7 @@ vuer_examples/
 
 ## Related
 
-- **Main Project**: See `vuer-mjcf` README for full package documentation
+- **Main Project**: See `vuer_mjcf` README for full package documentation
 - **Task Definitions**: See `vuer_mjcf/tasks/` for all available tasks
 - **Stage Sets**: See `vuer_mjcf/stage_sets/` for scene configurations
 - **Data Collection**: For trajectory recording and demos, use `collect_demo.py` from the main repository

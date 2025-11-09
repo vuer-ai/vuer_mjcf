@@ -30,12 +30,12 @@ class R5aScene(Mjcf):
     </asset>
   """
 
-    def __init__(self, *_children, assets="assets", **kwargs):
-        super().__init__(*_children, assets=assets, **kwargs)
+    def __init__(self, *_children,  **kwargs):
+        super().__init__(*_children, **kwargs)
 
         robot = R5a(
             name="r5a",
-            assets="r5a",
+            assets="robots/r5a",
             pos=[0, 0, 0],
             **kwargs
         )
@@ -53,7 +53,7 @@ def make_schema(**options):
 
     assets = str(Path(__file__).parent.parent.parent / "assets")
     ground = GroundPlane()
-    scene = R5aScene(ground, assets=assets, **options)
+    scene = R5aScene(ground, **options)
 
     return scene._xml | Prettify()
 

@@ -1,6 +1,6 @@
 # Robots
 
-Vuer-MJCF provides a comprehensive collection of robot models including robotic arms, grippers, dexterous hands, and humanoids.
+Vuer_MJCF provides a comprehensive collection of robot models including robotic arms, grippers, dexterous hands, and humanoids.
 
 ## Robot Arms
 

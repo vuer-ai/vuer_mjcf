@@ -1,6 +1,6 @@
 # Objects
 
-Vuer-MJCF provides a comprehensive library of objects for robotics simulation. Objects range from simple geometric primitives to complex articulated structures and deformable bodies.
+Vuer_MJCF provides a comprehensive library of objects for robotics simulation. Objects range from simple geometric primitives to complex articulated structures and deformable bodies.
 
 ## Featured Objects
 

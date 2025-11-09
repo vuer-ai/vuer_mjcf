@@ -30,15 +30,15 @@ class FloatingWidowXArm(Mjcf):
     </asset>
   """
 
-    def __init__(self, *_children, assets="assets", **kwargs):
-        super().__init__(*_children, assets=assets, **kwargs)
+    def __init__(self, *_children,  **kwargs):
+        super().__init__(*_children, **kwargs)
 
         camera_rig = make_camera_rig(self._pos)
         light_rig = make_lighting_rig(self._pos)
 
+        kwargs["assets"] = "robots/trossen_widow_x_arm"
         robot = WidowXArm(
             name="widowxarm",
-            assets="trossen_widow_x_arm",
             **kwargs
             # pos=self.pos)
             # quat=[0,0,0,-1],

@@ -32,8 +32,8 @@ class PandaRobotiq2f85(Mjcf):
     </asset>
   """
 
-    def __init__(self, *_children, assets="assets", dual_robot=False, camera_rig=None, **kwargs):
-        super().__init__(*_children, assets=assets, **kwargs)
+    def __init__(self, *_children,  dual_robot=False, camera_rig=None, **kwargs):
+        super().__init__(*_children, **kwargs)
         raise RuntimeError("This scene needs to be fixed (gripper position is off)")
 
         if camera_rig is None:
@@ -97,7 +97,7 @@ def make_schema(**options):
 
     assets = str(Path(__file__).parent.parent.parent / "assets")
     ground = GroundPlane()
-    scene = PandaRobotiq2f85(ground, assets=assets, **options)
+    scene = PandaRobotiq2f85(ground, **options)
 
     return scene._xml | Prettify()
 

@@ -79,7 +79,7 @@ def make_schema(mode="cameraready", robot="panda", show_robot=False, dual_grippe
         </actuator>
         """,
     )
-    from vuer_mjcf.base import Raw
+    from vuer_mjcf.schema import Raw
 
     fishing_rod = Raw("""
     <body name="mocap-handle" mocap="true" pos="-0.15 0 1.1">

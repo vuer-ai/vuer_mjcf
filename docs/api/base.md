@@ -1,6 +1,6 @@
 # `vuer_mjcf.schema.base`
 
-The base module provides the foundational classes for building XML structures in vuer-mjcf. These classes use a compositional approach to construct complex MuJoCo MJCF files from simple, reusable components.
+The base module provides the foundational classes for building XML structures in vuer_mjcf. These classes use a compositional approach to construct complex MuJoCo MJCF files from simple, reusable components.
 
 ## Overview
 

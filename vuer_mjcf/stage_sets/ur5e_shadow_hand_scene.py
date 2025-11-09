@@ -29,8 +29,8 @@ class UR5ShadowHand(Mjcf):
     </asset>z
     """
 
-    def __init__(self, *_children, assets="assets", dual_robot=False, camera_rig=None, **kwargs):
-        super().__init__(*_children, assets=assets, **kwargs)
+    def __init__(self, *_children,  dual_robot=False, camera_rig=None, **kwargs):
+        super().__init__(*_children, **kwargs)
 
         if camera_rig is None:
             camera_rig = make_camera_rig(self._pos)
@@ -76,7 +76,7 @@ def make_schema(**options):
 
     assets = str(Path(__file__).parent.parent.parent / "assets")
     ground = GroundPlane()
-    scene = UR5ShadowHand(ground, assets=assets, **options)
+    scene = UR5ShadowHand(ground, **options)
 
     return scene._xml | Prettify()
 

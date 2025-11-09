@@ -103,7 +103,7 @@ def make_schema(**options):
     from pathlib import Path
 
     assets = str(Path(__file__).parent.parent.parent / "assets")
-    scene = MovingCylinder(assets=assets, **options)
+    scene = MovingCylinder(**options)
 
     return scene._xml | Prettify()
 

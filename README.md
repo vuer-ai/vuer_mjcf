@@ -1,4 +1,4 @@
-# vuer-mjcf: MuJoCo Environments for VR Teleoperation
+# vuer_mjcf: MuJoCo Environments for VR Teleoperation
 
 A Python library for creating and visualizing MuJoCo manipulation tasks in VR using Vuer.
 
@@ -6,8 +6,8 @@ A Python library for creating and visualizing MuJoCo manipulation tasks in VR us
 
 ```bash
 # Clone the repository
-git clone https://github.com/vuer-ai/vuer-mjcf.git
-cd vuer-mjcf
+git clone https://github.com/vuer-ai/vuer_mjcf.git
+cd vuer_mjcf
 
 # Install with uv (recommended)
 uv pip install -e .
@@ -44,7 +44,7 @@ model = mujoco.MjModel.from_xml_string(xml_string)
 ## Project Structure
 
 ```
-vuer_mjcf/                    # Root directory (rename from vuer-mjcf)
+vuer_mjcf/                    # Root directory
 ├── vuer_mjcf/                # Main package
 │   ├── basic_components/     # Scene building blocks
 │   ├── objects/              # Object definitions
@@ -78,7 +78,7 @@ See `vuer_examples/README.md` for full list of available scenes and examples.
 ## Documentation
 
 - **VR Viewer Guide**: `vuer_examples/README.md`
-- **API Documentation**: https://vuer-mjcf.readthedocs.io
+- **API Documentation**: https://vuer_mjcf.readthedocs.io
 - **Task Definitions**: `vuer_mjcf/tasks/`
 - **Stage Sets**: `vuer_mjcf/stage_sets/`
 

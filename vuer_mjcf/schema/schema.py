@@ -249,6 +249,7 @@ class Mjcf(MjNode):
     """
 
     tag = "mujoco"
+    assets=str(Path(__file__).parent.parent.parent / "assets")
 
     def __init__(self, *_children, pos=None, quat=None, **kwargs):
         super().__init__(*_children, **kwargs)

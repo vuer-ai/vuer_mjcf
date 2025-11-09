@@ -46,7 +46,7 @@ class DualPanda(Mjcf):
     """
 
     def __init__(self, *_children, assets="../robots", **kwargs):
-        super().__init__(*_children, assets=assets, **kwargs)
+        super().__init__(*_children, **kwargs)
 
         left_gripper = TomikaGripper(assets="tomika_gripper", attributes={"name": "left-gripper"})
         right_gripper = TomikaGripper(assets="tomika_gripper", attributes={"name": "right-gripper"})

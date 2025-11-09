@@ -11,6 +11,8 @@ class FloatingAbilityHand(Mjcf):
     _attributes = {
         "model": "ability hand setup",
     }
+    assets=str(Path(__file__).parent.parent.parent / "assets")
+
 
     _preamble = """
     <compiler angle="radian" autolimits="true" assetdir="{assets}" meshdir="{assets}" texturedir="{assets}"/>
@@ -28,8 +30,8 @@ class FloatingAbilityHand(Mjcf):
       <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
     </asset>
     """
-    def __init__(self, *_children, assets="assets", bimanual=True, camera_rig=None, **kwargs):
-        super().__init__(*_children, assets=assets, **kwargs)
+    def __init__(self, *_children, bimanual=True, camera_rig=None, **kwargs):
+        super().__init__(*_children, **kwargs)
 
         if camera_rig is None:
             camera_rig = make_camera_rig(self._pos)
@@ -74,7 +76,7 @@ def make_schema(**options):
 
     assets = str(Path(__file__).parent.parent.parent / "assets")
     ground = GroundPlane()
-    scene = FloatingAbilityHand(ground, assets=assets, **options)
+    scene = FloatingAbilityHand(ground, **options)
 
     return scene._xml | Prettify()
 

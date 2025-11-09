@@ -3,12 +3,12 @@ from vuer_mjcf.basic_components.rigs.camera_rig import make_camera_rig
 from vuer_mjcf.basic_components.rigs.lighting_rig import make_lighting_rig
 from vuer_mjcf.robots.robotiq_2f85 import Robotiq2F85
 from vuer_mjcf.schema import Mjcf
+from pathlib import Path
 
 from vuer_mjcf.robots.ur5e import UR5e
 
 class UR5Robotiq2f85(Mjcf):
     """A class that combines UR5 robot with Robotiq gripper."""
-
     name = "ur5-robotiq-2f85"
 
     _preamble = """
@@ -29,8 +29,8 @@ class UR5Robotiq2f85(Mjcf):
     </asset>z
     """
 
-    def __init__(self, *_children, assets="assets", dual_robot=False, camera_rig=None, **kwargs):
-        super().__init__(*_children, assets=assets, **kwargs)
+    def __init__(self, *_children, dual_robot=False, camera_rig=None, **kwargs):
+        super().__init__(*_children, **kwargs)
 
         if camera_rig is None:
             camera_rig = make_camera_rig(self._pos)
@@ -93,7 +93,7 @@ def make_schema(**options):
 
     assets = str(Path(__file__).parent.parent.parent / "assets")
     ground = GroundPlane()
-    scene = UR5Robotiq2f85(ground, assets=assets, **options)
+    scene = UR5Robotiq2f85(ground, **options)
 
     return scene._xml | Prettify()
 

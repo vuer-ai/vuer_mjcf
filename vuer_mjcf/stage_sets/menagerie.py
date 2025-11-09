@@ -39,65 +39,66 @@ class Menagerie(Mjcf):
     </asset>
   """
 
-    def __init__(self, *_children, assets="assets", **kwargs):
-        super().__init__(*_children, assets=assets, **kwargs)
+    def __init__(self, *_children,  **kwargs):
+        super().__init__(*_children, **kwargs)
 
         camera_rig = make_camera_rig(self._pos)
         light_rig = make_lighting_rig(self._pos)
 
+        kwargs["assets"] = "robots/trossen_widow_x_arm"
         trossen_arm = WidowXArm(
             name="widowxarm",
-            assets="trossen_widow_x_arm",
             pos=[1, 1, 0],
             quat=[1, 0, 0, 0],
             **kwargs
         )
 
+        kwargs["assets"] = "robots/astribot"
         astribot = Astribot(
             name="astribot",
-            assets="astribot",
             pos= [0, 0, 0],
             **kwargs
         )
 
+        kwargs["assets"] = "robots/lift"
         lift = Lift(
             name="lift",
-            assets="lift",
             pos=[0, 1, 0],
             quat=[0, 0, 0, 1],
             **kwargs
         )
 
+        kwargs["assets"] = "robots/r5a"
         r5a = R5a(
             name="r5a",
-            assets="r5a",
             pos= [1, -0.33, 0],
             **kwargs
         )
 
+        kwargs["assets"] = "robots/x5a"
         x5a = X5a(
             name="x5a",
-            assets="x5a",
             pos=[1, 0.33, 0],
             **kwargs
         )
 
+        kwargs["assets"] = "robots/x7"
         x7 = X7(
             name="x7",
-            assets="x7",
+            assets="robots/x7",
             pos=[0, -1, 0],
         )
 
+        kwargs["assets"] = "robots/xhand_right"
         xhand_right = XHandRight(
             name="xhand_right",
-            assets="xhand_right",
             pos=[1, -1, 0],
             **kwargs
         )
 
+        kwargs["assets"] = "robots/xhand_left"
         xhand_left = XHandLeft(
             name="xhand_left",
-            assets="xhand_left",
             pos=[1, -1, 0.1],
             **kwargs
         )
