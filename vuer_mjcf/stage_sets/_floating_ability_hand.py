@@ -36,7 +36,7 @@ class FloatingAbilityHand(Mjcf):
         light_rig = make_lighting_rig(self._pos)
 
         hand1 = AbilityHandLeft(
-            assets="ability_hand",
+            assets="robots/ability_hand",
             name="ability_hand_left",
             pos=self._pos + [0, 0.15, 0.3],
             wrist_mount=camera_rig.wrist_camera,
@@ -46,7 +46,7 @@ class FloatingAbilityHand(Mjcf):
 
         if bimanual:
             hand2 = AbilityHandRight(
-                assets="ability_hand",
+                assets="robots/ability_hand",
                 name="ability_hand_right",
                 pos=self._pos + [0, -0.15, 0.3],
                 wrist_mount=camera_rig.wrist_camera,
@@ -69,10 +69,10 @@ class FloatingAbilityHand(Mjcf):
         )
 
 def make_schema(**options):
-    from vuer_mujoco.schemas.utils.file import Prettify
+    from vuer_mjcf.utils.file import Prettify
     from pathlib import Path
 
-    assets = str(Path(__file__).parent.parent.parent / "assets" / "robots")
+    assets = str(Path(__file__).parent.parent.parent / "assets")
     ground = GroundPlane()
     scene = FloatingAbilityHand(ground, assets=assets, **options)
 

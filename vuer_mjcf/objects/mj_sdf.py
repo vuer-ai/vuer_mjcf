@@ -19,29 +19,18 @@ class MjSDF(Body):
     }
     _preamble = """
     <option timestep="0.002" integrator="implicitfast" sdf_iterations="20" sdf_initpoints="40"/>
-    <extension>
-      <plugin plugin="mujoco.sdf.sdflib">
-        <instance name="{assets}-sdf">
-          <config key="aabb" value="0"/>
-        </instance>
-      </plugin>
-    </extension>
     
     <asset>
         <texture type="2d" name="{name}-texture" file="{assets}/{texture}"/>
         <material name="{name}-material" texture="{name}-texture" specular="0.2" shininess="0.2"/>
       
-        <mesh name="{name}-model" file="{assets}/{model}" scale="{scale}">
-            <plugin instance="{assets}-sdf"/>
-        </mesh>
+        <mesh name="{name}-model" file="{assets}/{model}" scale="{scale}"/>
     </asset>
     """
 
     _children_raw = """
         <joint type="free"/>
-        <geom type="sdf" name="{name}-sdf" mesh="{name}-model" quat="{geom_quat}" mass="{mass}" material="{name}-material" contype="1" conaffinity="1" {additional_geom_attributes}>
-            <plugin instance="{assets}-sdf"/>
-        </geom>
+        <geom type="sdf" name="{name}-sdf" mesh="{name}-model" quat="{geom_quat}" mass="{mass}" material="{name}-material" contype="1" conaffinity="1" {additional_geom_attributes}/>
         {additional_children_raw}
     """
 

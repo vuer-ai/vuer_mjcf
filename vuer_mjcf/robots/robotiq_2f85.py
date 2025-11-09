@@ -1,5 +1,5 @@
 from vuer_mjcf.schema import Body
-from ..se3.se3_mujoco import Vector3, WXYZ
+from ..utils.se3.se3_mujoco import Vector3, WXYZ
 
 
 class Robotiq2F85(Body):

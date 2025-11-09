@@ -1,20 +1,21 @@
-from vuer_mjcf.components.concrete_slab import ConcreteSlab
-from vuer_mjcf.tasks._floating_shadowhand import FloatingShadowHand
+import numpy as np
+
+from vuer_mjcf.basic_components.concrete_slab import ConcreteSlab
+from vuer_mjcf.stage_sets._floating_shadowhand import FloatingShadowHand
 from vuer_mjcf.objects.decomposed_obj import ObjMujocoObject
-from vuer_mjcf.objects.cup_3 import ObjaverseMujocoCup
+from vuer_mjcf.objects.objaverse_mujoco_cup import ObjaverseMujocoCup
 from vuer_mjcf.objects.bin import Bin
-from vuer_mjcf.schema import Composite
+from vuer_mjcf.schema import Composite, Replicate, Body
 from vuer_mjcf.objects.orbit_table import OpticalTable
 from vuer_mjcf.basic_components.rigs.lighting_rig import make_lighting_rig
 from vuer_mjcf.basic_components.rigs.camera_rig import make_camera_rig
-
 
 def make_schema():
     from vuer_mjcf.utils.file import Prettify
 
     optical_table = OpticalTable(
         pos=[-0.2, 0, 0.79],
-        assets="model",
+        assets="optical_table",
         _attributes={"name": "table_optical"},
     )
     # camera_rig = make_camera_rig(optical_table._pos)
@@ -80,12 +81,31 @@ def make_schema():
     bin = Bin(
         attributes=dict(name="bin", pos="0 0 0.8"),
     )
-
-    particles = Composite(
-        attributes=dict(type="particle", count="5 6 7", spacing="0.018", offset="0 0 0.9"),
-        _children_raw="""
-        <geom size=".005" rgba=".8 .2 .1 1"/>        
-        """,
+    particles_pos = list(np.array([0, 0, 0.]) )
+    particles = Replicate(
+        Replicate(
+            Replicate(
+                Body(
+                    pos=particles_pos,
+                    _children_raw="""
+                                    <freejoint/>
+                                    <geom size=".005" rgba=".8 .2 .1 1" condim="1"/>
+                                """,
+                ),
+                _attributes=dict(
+                    count=7,
+                    offset="0.0 0.0 0.018",
+                ),
+            ),
+            _attributes=dict(
+                count=6,
+                offset="0.0 0.018 0.0",
+            ),
+        ),
+        _attributes=dict(
+            count=5,
+            offset="0.018 0.0 0.0",
+        ),
     )
 
     scene = FloatingShadowHand(
@@ -108,8 +128,33 @@ def make_schema():
 
     return scene._xml | Prettify()
 
-
 if __name__ == "__main__":
-    from vuer_mjcf.utils.file import Save
+    import tempfile
+    from pathlib import Path
 
-    make_schema() | Save(__file__.replace(".py", ".mjcf.xml"))
+    xml_str = make_schema()
+    print("Generated XML for Particle Sweep task")
+    print(xml_str)
+
+    try:
+        import mujoco
+        import mujoco.viewer
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+            f.write(xml_str)
+            temp_path = f.name
+
+        try:
+            model = mujoco.MjModel.from_xml_path(temp_path)
+            print("✓ Particle Sweep task loaded successfully!")
+            print(f"  - Number of bodies: {model.nbody}")
+
+            data = mujoco.MjData(model)
+            print("Launching interactive viewer...")
+            mujoco.viewer.launch(model, data)
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+    except ImportError:
+        print("MuJoCo not available")
+    except Exception as e:
+        print(f"✗ Error: {e}")
+        raise

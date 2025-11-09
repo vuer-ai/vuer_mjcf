@@ -52,7 +52,7 @@ def make_schema(**options):
     from vuer_mjcf.utils.file import Prettify
     from pathlib import Path
 
-    assets = str(Path(__file__).parent.parent.parent / "assets" / "robots")
+    assets = str(Path(__file__).parent.parent.parent / "assets")
     ground = GroundPlane()
     scene = AstriBotScene(ground, assets=assets, **options)
 

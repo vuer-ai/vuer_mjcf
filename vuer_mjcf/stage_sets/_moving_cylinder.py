@@ -102,7 +102,7 @@ def make_schema(**options):
     from vuer_mjcf.utils.file import Prettify
     from pathlib import Path
 
-    assets = str(Path(__file__).parent.parent.parent / "assets" / "robots")
+    assets = str(Path(__file__).parent.parent.parent / "assets")
     scene = MovingCylinder(assets=assets, **options)
 
     return scene._xml | Prettify()

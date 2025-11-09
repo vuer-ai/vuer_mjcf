@@ -1,17 +1,13 @@
 import random
 from pathlib import Path
 
-from vuer_mjcf.utils.file import Save
 from vuer_mjcf.schema import Body
 from vuer_mjcf.objects.mj_sdf import MjSDF
-from vuer_mjcf.tasks import add_env
-from vuer_mjcf.components.table_slab import Table
-from vuer_mjcf.tasks._floating_robotiq import FloatingRobotiq2f85
-from vuer_mjcf.tasks.entrypoint import make_env
+from vuer_mjcf.basic_components.table_slab import Table
+from vuer_mjcf.stage_sets._floating_robotiq import FloatingRobotiq2f85
 
 x1, y1 = random.uniform(-0.2, 0.2), random.uniform(-0.1, -0.5)
 x2, y2 = random.uniform(-0.2, 0.2), random.uniform(-0.1, -0.5)
-
 
 def make_schema(**options):
     from vuer_mjcf.utils.file import Prettify
@@ -55,29 +51,33 @@ def make_schema(**options):
 
     return scene._xml | Prettify()
 
-
-add_env(
-    env_id="PickSphere-v1",
-    entrypoint=make_env,
-    kwargs=dict(
-        xml_path="pick_sphere.mjcf.xml",
-        workdir=Path(__file__).parent,
-        mode="multiview",
-    ),
-)
-
-add_env(
-    env_id="PickSphere-lucid-v1",
-    entrypoint=make_env,
-    kwargs=dict(
-        xml_path="pick_sphere.mjcf.xml",
-        workdir=Path(__file__).parent,
-        mode="lucid",
-        prefix_to_class_ids={"basket": 5, "table": 100, "ball": 80, "can": 65},
-        object_keys=["ball"],
-    ),
-)
-
-
 if __name__ == "__main__":
-    make_schema() | Save(__file__.replace(".py", ".mjcf.xml"))
+    import tempfile
+    from pathlib import Path
+
+    xml_str = make_schema()
+    print("Generated XML for Pick Sphere task")
+    print(xml_str)
+
+    try:
+        import mujoco
+        import mujoco.viewer
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+            f.write(xml_str)
+            temp_path = f.name
+
+        try:
+            model = mujoco.MjModel.from_xml_path(temp_path)
+            print("✓ Pick Sphere task loaded successfully!")
+            print(f"  - Number of bodies: {model.nbody}")
+
+            data = mujoco.MjData(model)
+            print("Launching interactive viewer...")
+            mujoco.viewer.launch(model, data)
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+    except ImportError:
+        print("MuJoCo not available")
+    except Exception as e:
+        print(f"✗ Error: {e}")
+        raise

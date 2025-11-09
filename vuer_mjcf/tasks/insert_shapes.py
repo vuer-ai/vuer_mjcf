@@ -3,13 +3,11 @@ import warnings
 from pathlib import Path
 import numpy as np
 
-from vuer_mjcf.tasks.base.mocap_task import MocapTask
 from vuer_mjcf.objects.sort_shapes import SquareBlock, HexBlock, TriangleBlock, CircleBlock, LeBox
 from vuer_mjcf.basic_components.rigs.camera_rig import make_camera_rig
-from vuer_mjcf.components.concrete_slab import ConcreteSlab
-from vuer_mjcf.tasks._floating_robotiq import FloatingRobotiq2f85
+from vuer_mjcf.basic_components.concrete_slab import ConcreteSlab
+from vuer_mjcf.stage_sets._floating_robotiq import FloatingRobotiq2f85
 from vuer_mjcf.objects.orbit_table import OpticalTable
-
 
 def make_schema(mode="cameraready", robot="panda", show_robot=False, **options):
     from vuer_mjcf.utils.file import Prettify
@@ -25,7 +23,7 @@ def make_schema(mode="cameraready", robot="panda", show_robot=False, **options):
 
     optical_table = OpticalTable(
         pos=[0, 0, 0.79],
-        assets="model",
+        assets="optical_table",
         _attributes={"name": "table_optical"},
     )
 
@@ -91,144 +89,33 @@ def make_schema(mode="cameraready", robot="panda", show_robot=False, **options):
 
     return scene._xml | Prettify()
 
-
-class Insert(MocapTask):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        from vuer_mjcf.tasks.base.lucidxr_task import get_site
-
-        self.hexblock = get_site(self.physics, "block_hex")
-        self.squareblock = get_site(self.physics, "block_square")
-        self.circleblock = get_site(self.physics, "block_circle")
-        self.triangleblock = get_site(self.physics, "block_triangle")
-
-        self.lebox_hex = get_site(self.physics, "lebox-hexblock")
-        self.lebox_square = get_site(self.physics, "lebox-squareblock")
-        self.lebox_circle = get_site(self.physics, "lebox-circleblock")
-        self.lebox_triangle = get_site(self.physics, "lebox-triangleblock")
-
-    def get_reward(self, physics):
-        reward = 0.0
-        hexblock_pos = physics.data.site_xpos[self.hexblock.id]
-        squareblock_pos = physics.data.site_xpos[self.squareblock.id]
-        circleblock_pos = physics.data.site_xpos[self.circleblock.id]
-        triangleblock_pos = physics.data.site_xpos[self.triangleblock.id]
-
-        hexblock_goal_pos = physics.data.site_xpos[self.lebox_hex.id]
-        squareblock_goal_pos = physics.data.site_xpos[self.lebox_square.id]
-        circleblock_goal_pos = physics.data.site_xpos[self.lebox_circle.id]
-        triangleblock_goal_pos = physics.data.site_xpos[self.lebox_triangle.id]
-
-        # Check if the blocks are close to their respective goal positions
-        if (
-            np.linalg.norm(hexblock_pos - hexblock_goal_pos) < 0.03
-            and np.linalg.norm(squareblock_pos - squareblock_goal_pos) < 0.03
-            and np.linalg.norm(circleblock_pos - circleblock_goal_pos) < 0.03
-            and np.linalg.norm(triangleblock_pos - triangleblock_goal_pos) < 0.03
-        ):
-            reward = 1.0
-        warnings.warn("Reward is untested for this env, bc we had no working policy")
-
-        return reward
-
-
-hexblock_qpos_addr = 7
-squareblock_qpos_addr = 14
-circleblock_qpos_addr = 28
-triangleblock_qpos_addr = 21
-lebox_qpos_addr = 0
-
-
-class InsertShapesRand(Insert):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    @staticmethod
-    def randomize_state(qpos=None, quat=None, **kwargs):
-        new_qpos = qpos.copy()
-
-        x1, y1 = random.uniform(0.45, 0.65), random.uniform(-0.2, 0.2)
-        x2, y2 = random.uniform(0.45, 0.65), random.uniform(-0.2, 0.2)
-        x3, y3 = random.uniform(0.45, 0.65), random.uniform(-0.2, 0.2)
-        x4, y4 = random.uniform(0.45, 0.65), random.uniform(-0.2, 0.2)
-
-        new_pos_hexblock = np.array([x1, y1, qpos[hexblock_qpos_addr + 2]])
-        new_pos_squareblock = np.array([x2, y2, qpos[squareblock_qpos_addr + 2]])
-        new_pos_circleblock = np.array([x3, y3, qpos[circleblock_qpos_addr + 2]])
-        new_pos_triangleblock = np.array([x4, y4, qpos[triangleblock_qpos_addr + 2]])
-
-        new_qpos[hexblock_qpos_addr : hexblock_qpos_addr + 3] = new_pos_hexblock
-        new_qpos[squareblock_qpos_addr : squareblock_qpos_addr + 3] = new_pos_squareblock
-        new_qpos[circleblock_qpos_addr : circleblock_qpos_addr + 3] = new_pos_circleblock
-        new_qpos[triangleblock_qpos_addr : triangleblock_qpos_addr + 3] = new_pos_triangleblock
-        return dict(qpos=new_qpos, quat=quat, **kwargs)
-
-
-class InsertGoalRand(Insert):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    @staticmethod
-    def randomize_state(qpos=None, quat=None, **kwargs):
-        new_qpos = qpos.copy()
-        x5, y5 = random.uniform(0.27, 0.35), random.uniform(-0.1, 0.1)
-        new_pos_lebox = np.array([x5, y5, qpos[lebox_qpos_addr + 2]])
-        new_qpos[lebox_qpos_addr : lebox_qpos_addr + 3] = new_pos_lebox
-        return dict(qpos=new_qpos, quat=quat, **kwargs)
-
-
-def register():
-    from vuer_mjcf.tasks import add_env
-    from vuer_mjcf.tasks.entrypoint import make_env
-
-    add_env(
-        env_id="InsertShapes-fixed-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=Insert,
-            camera_names=["front", "right", "wrist"],
-            xml_path="insert_shapes.mjcf.xml",
-            workdir=Path(__file__).parent,
-        ),
-    )
-    add_env(
-        env_id="InsertShapes-shapes_rand-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=InsertShapesRand,
-            camera_names=["front", "right", "wrist", "top"],
-            xml_renderer=make_schema,
-            keyframe_file="insert_shapes.frame.yaml",
-            workdir=Path(__file__).parent,
-        ),
-    )
-    add_env(
-        env_id="InsertShapes-box_rand-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=InsertGoalRand,
-            camera_names=["front", "right", "wrist", "top"],
-            xml_renderer=make_schema,
-            keyframe_file="insert_shapes.frame.yaml",
-            workdir=Path(__file__).parent,
-        ),
-    )
-    add_env(
-        env_id="InsertShapes-lucid-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            tasks=Insert,
-            camera_names=["right", "right_r", "wrist", "front"],
-            xml_path="insert_shapes.mjcf.xml",
-            workdir=Path(__file__).parent,
-            mode="lucid",
-            prefix_to_class_ids={},
-            object_keys=["block", "lebox"],
-        ),
-    )
-
-
 if __name__ == "__main__":
-    from vuer_mjcf.utils.file import Save
+    import tempfile
+    from pathlib import Path
 
-    make_schema() | Save(__file__.replace(".py", ".mjcf.xml"))
+    xml_str = make_schema()
+    print("Generated XML for Insert Shapes task")
+    print(xml_str)
+
+    try:
+        import mujoco
+        import mujoco.viewer
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+            f.write(xml_str)
+            temp_path = f.name
+
+        try:
+            model = mujoco.MjModel.from_xml_path(temp_path)
+            print("✓ Insert Shapes task loaded successfully!")
+            print(f"  - Number of bodies: {model.nbody}")
+
+            data = mujoco.MjData(model)
+            print("Launching interactive viewer...")
+            mujoco.viewer.launch(model, data)
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+    except ImportError:
+        print("MuJoCo not available")
+    except Exception as e:
+        print(f"✗ Error: {e}")
+        raise

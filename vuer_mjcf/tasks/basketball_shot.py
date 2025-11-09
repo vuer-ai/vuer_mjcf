@@ -4,24 +4,19 @@ from pathlib import Path
 import numpy as np
 
 from vuer_mjcf.objects.decomposed_obj import ObjMujocoObject
-from vuer_mjcf.tasks.base.lucidxr_task import get_site
-from vuer_mjcf.tasks.base.mocap_task import MocapTask
 from vuer_mjcf.basic_components.rigs.camera_rig import make_camera_rig
-from vuer_mjcf.components.concrete_slab import ConcreteSlab
-# from vuer_mjcf.basic_components.rigs.camera_rig import make_camera_rig
 from vuer_mjcf.basic_components.rigs.camera_rig_zoomed_out import make_camera_rig
-from vuer_mjcf.components.concrete_slab import ConcreteSlab
-from vuer_mjcf.tasks._floating_shadowhand import FloatingShadowHand
+from vuer_mjcf.basic_components.concrete_slab import ConcreteSlab
+from vuer_mjcf.stage_sets._floating_shadowhand import FloatingShadowHand
 from vuer_mjcf.basic_components.rigs.lighting_rig import make_lighting_rig
 from vuer_mjcf.objects.orbit_table import OpticalTable
-
 
 def make_schema(**_):
     from vuer_mjcf.utils.file import Prettify
 
     optical_table = OpticalTable(
         pos=[-0.2, 0, 0.79],
-        assets="model",
+        assets="optical_table",
         _attributes={"name": "table_optical"},
     )
     # camera_rig = make_camera_rig(optical_table._pos)
@@ -82,56 +77,33 @@ def make_schema(**_):
 
     return scene._xml | Prettify()
 
-class Shoot(MocapTask):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.basketball = get_site(self.physics, "basketball")
-        # Using list comprehension to get the 4 hoop corner sites
-        self.hoop_corners = [
-            get_site(self.physics, f"hoop_corner{i+1}") for i in range(4)
-        ]
-
-    def get_reward(self, physics):
-        reward = 0.0
-        basketball_pos = physics.data.site_xpos[self.basketball.id]
-
-        # Extract x, y positions of the corners to form a bounding box in the xy-plane
-        hoop_x_min = min(physics.data.site_xpos[corner.id][0] for corner in self.hoop_corners)
-        hoop_x_max = max(physics.data.site_xpos[corner.id][0] for corner in self.hoop_corners)
-        hoop_y_min = min(physics.data.site_xpos[corner.id][1] for corner in self.hoop_corners)
-        hoop_y_max = max(physics.data.site_xpos[corner.id][1] for corner in self.hoop_corners)
-
-        # Extract z positions of the corners to check the tolerance
-        hoop_z_min = min(physics.data.site_xpos[corner.id][2] for corner in self.hoop_corners)
-
-        # Check if the basketball is within the bounding box in the xy-plane and within z tolerance of 1 cm
-        if (
-            hoop_x_min <= basketball_pos[0] <= hoop_x_max and
-            hoop_y_min <= basketball_pos[1] <= hoop_y_max and
-            abs(basketball_pos[2] - hoop_z_min) <= 0.01
-        ):
-            reward = 1.0  # Ball is inside the bounding box and within z tolerance
-        warnings.warn("Reward is untested for this env, bc we had no working policy")
-
-        return reward
-
-def register():
-    from vuer_mjcf.tasks import add_env
-    from vuer_mjcf.tasks.entrypoint import make_env
-
-    add_env(
-        env_id="BasketballShot-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=Shoot,
-            camera_names=["right", "right_r", "wrist", "front"],
-            xml_path="basketball_shot.mjcf.xml",
-            workdir=Path(__file__).parent,
-        ),
-    )
-
-
 if __name__ == "__main__":
-    from vuer_mjcf.utils.file import Save
+    import tempfile
+    from pathlib import Path
 
-    make_schema() | Save(__file__.replace(".py", ".mjcf.xml"))
+    xml_str = make_schema()
+    print("Generated XML for Basketball Shot task")
+    print(xml_str)
+
+    try:
+        import mujoco
+        import mujoco.viewer
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+            f.write(xml_str)
+            temp_path = f.name
+
+        try:
+            model = mujoco.MjModel.from_xml_path(temp_path)
+            print("✓ Basketball Shot task loaded successfully!")
+            print(f"  - Number of bodies: {model.nbody}")
+
+            data = mujoco.MjData(model)
+            print("Launching interactive viewer...")
+            mujoco.viewer.launch(model, data)
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+    except ImportError:
+        print("MuJoCo not available")
+    except Exception as e:
+        print(f"✗ Error: {e}")
+        raise

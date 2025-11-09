@@ -98,7 +98,7 @@ def make_schema(robot="panda", **options):
 
     optical_table = OpticalTable(
         pos=[0, 0, 0.79],
-        assets="model",
+        assets="optical_table",
         _attributes={"name": "optical_table"},
     )
 

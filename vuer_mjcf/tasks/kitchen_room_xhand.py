@@ -2,10 +2,10 @@ from pathlib import Path
 
 import numpy as np
 
-from vuer_mjcf.objects.bowl_0 import ObjaverseMujocoBowl
-from vuer_mjcf.objects.cup_3 import ObjaverseMujocoCup
+from vuer_mjcf.objects.objaverse_mujoco_bowl import ObjaverseMujocoBowl
+from vuer_mjcf.objects.objaverse_mujoco_cup import ObjaverseMujocoCup
 from vuer_mjcf.objects.mug import ObjaverseMujocoMug
-from vuer_mjcf.objects.plate import ObjaverseMujoco
+from vuer_mjcf.objects.plate import ObjaverseMujocoPlate
 from vuer_mjcf.objects.spoon_7 import ObjaverseMujocoSpoon
 from vuer_mjcf.objects.cabinet import KitchenCabinet
 from vuer_mjcf.objects.dishwasher import KitchenDishwasher
@@ -17,20 +17,15 @@ from vuer_mjcf.objects.refrigerator import KitchenFridge
 from vuer_mjcf.objects.room_wall import RoomWall
 from vuer_mjcf.objects.sink_wide import KitchenSinkWide
 from vuer_mjcf.schema import Body
-from vuer_mjcf.tasks import add_env
-from vuer_mjcf.tasks._floating_xhand import FloatingXHand
-from vuer_mjcf.tasks.base.lucidxr_task import get_site
-from vuer_mjcf.tasks.base.mocap_task import MocapTask
+from vuer_mjcf.stage_sets._floating_xhand import FloatingXHand
 from vuer_mjcf.basic_components.rigs.camera_rig import make_camera_rig
-from vuer_mjcf.tasks._floating_robotiq import FloatingRobotiq2f85
-from vuer_mjcf.tasks.entrypoint import make_env
+from vuer_mjcf.stage_sets._floating_robotiq import FloatingRobotiq2f85
 
 # Generate random values for r, g, and b
 # r, g, b = random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1)
 
-
 def make_schema(mode="cameraready", robot="panda", show_robot=False, **options):
-    import vuer_mjcf.se3.se3_mujoco as m
+    import vuer_mjcf.utils.se3.se3_mujoco as m
     from vuer_mjcf.utils.file import Prettify
 
     origin = m.Vector3(-1, -1, 0)
@@ -107,7 +102,7 @@ def make_schema(mode="cameraready", robot="panda", show_robot=False, **options):
 
     fridge = KitchenFridge(assets="kitchen/fridge", attributes={"pos": "-1.4 -0.45 0.95"})
 
-    plate = ObjaverseMujoco(assets="kitchen/plate", pos=[0, -0.5, 0.95], name="plate", collision_count=32, randomize_colors=False)
+    plate = ObjaverseMujocoPlate(assets="kitchen/plate", pos=[0, -0.5, 0.95], name="plate", collision_count=32, randomize_colors=False)
     mug_pos = list(np.array([-0.4, -1.25, 1]) - origin)
     mug = ObjaverseMujocoMug(assets="kitchen/mug", pos=mug_pos, collision_count=32, visual_count=2)
     bowl_pos = list(np.array([-0.4, -1.25, 1]) - origin)
@@ -158,80 +153,33 @@ def make_schema(mode="cameraready", robot="panda", show_robot=False, **options):
 
     return scene._xml | Prettify()
 
-
-class CleanSink(MocapTask):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.first_goal = False
-        self.second_goal = False
-        self.cup_site = get_site(self.physics, "cup")
-        self.bowl_site = get_site(self.physics, "bowl")
-        self.sink_sites = [get_site(self.physics, f"sink-wide_corner_{i}") for i in range(1, 9)]
-        self.gripper_site = get_site(self.physics, "gripper-pinch")
-
-    def get_reward(self, physics):
-        reward = 0.0
-        cup_pos = physics.data.site_xpos[self.cup_site.id]
-        bowl_pos = physics.data.site_xpos[self.bowl_site.id]
-        if np.linalg.norm(cup_pos - bowl_pos) < 0.05:
-            self.first_goal = True
-
-        # Get positions of the 8 corner sites
-        corner_positions = np.array([physics.data.site_xpos[site.id] for site in self.sink_sites])
-
-        # Compute bounding box
-        min_corner = np.min(corner_positions, axis=0)  # [x_min, y_min, z_min]
-        max_corner = np.max(corner_positions, axis=0)  # [x_max, y_max, z_max]
-
-        # Optional small margin (e.g., for numerical robustness)
-        margin = 0.005
-        min_corner -= margin
-        max_corner += margin
-
-        # Check if cup is inside bounding box
-        cup_inside = np.all((cup_pos >= min_corner) & (cup_pos <= max_corner))
-        bowl_inside = np.all((bowl_pos >= min_corner) & (bowl_pos <= max_corner))
-
-        if cup_inside and bowl_inside:
-            self.second_goal = True
-
-        if self.first_goal and self.second_goal:
-            # Check if the gripper is not in the sink
-            gripper_pos = physics.data.site_xpos[self.gripper_site.id]
-            gripper_inside = np.all((gripper_pos >= min_corner) & (gripper_pos <= max_corner))
-            if not gripper_inside:
-                reward = 1.0
-
-        return reward
-
-
-def register():
-    add_env(
-        env_id="KitchenRoom-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=CleanSink,
-            camera_names=["right", "left", "wrist"],
-            xml_path="kitchen_room.mjcf.xml",
-            workdir=Path(__file__).parent,
-            mode="multiview",
-        ),
-    )
-    add_env(
-        env_id="KitchenRoom-lucid-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=CleanSink,
-            camera_names=["right", "right_r", "wrist"],
-            xml_path="kitchen_room.mjcf.xml",
-            workdir=Path(__file__).parent,
-            mode="lucid",
-            object_keys=["bowl", "cup"],
-        ),
-    )
-
-
 if __name__ == "__main__":
-    from vuer_mjcf.utils.file import Save
+    import tempfile
+    from pathlib import Path
 
-    make_schema() | Save(__file__.replace(".py", ".mjcf.xml"))
+    xml_str = make_schema()
+    print("Generated XML for Kitchen Room Xhand task")
+    print(xml_str)
+
+    try:
+        import mujoco
+        import mujoco.viewer
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+            f.write(xml_str)
+            temp_path = f.name
+
+        try:
+            model = mujoco.MjModel.from_xml_path(temp_path)
+            print("✓ Kitchen Room Xhand task loaded successfully!")
+            print(f"  - Number of bodies: {model.nbody}")
+
+            data = mujoco.MjData(model)
+            print("Launching interactive viewer...")
+            mujoco.viewer.launch(model, data)
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+    except ImportError:
+        print("MuJoCo not available")
+    except Exception as e:
+        print(f"✗ Error: {e}")
+        raise

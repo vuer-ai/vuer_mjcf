@@ -6,7 +6,7 @@ from vuer_mjcf.basic_components.rigs.lighting_rig import make_lighting_rig
 from vuer_mjcf.robots.astribot import Astribot
 from vuer_mjcf.robots.shadow_hand import ShadowHandLeft, ShadowHandRight
 from vuer_mjcf.schema import Mjcf
-from vuer_mjcf.se3.rot_gs6 import _compute_look_at_rotation
+from vuer_mjcf.utils.se3.rot_gs6 import _compute_look_at_rotation
 
 
 class AstribotHand(Mjcf):
@@ -113,7 +113,7 @@ def make_schema(**options):
     from vuer_mjcf.utils.file import Prettify
     from pathlib import Path
 
-    assets = str(Path(__file__).parent.parent.parent / "assets" / "robots")
+    assets = str(Path(__file__).parent.parent.parent / "assets")
     ground = GroundPlane()
     scene = AstribotHand(ground, assets=assets, **options)
 

@@ -5,11 +5,11 @@ from vuer_mjcf.schema.base import Xml
 # from utils.transform import compose
 import numpy as np
 from scipy.spatial.transform import Rotation as R
-import vuer_mjcf.se3.se3_mujoco as m
+import vuer_mjcf.utils.se3.se3_mujoco as m
 
 # from vuer_mjcf.basic_components.rigs.camera_rig import make_camera_rig
 # from vuer_mjcf.basic_components.rigs.lighting_rig import make_lighting_rig
-# from vuer_mjcf.se3.se3_mujoco import Vector3, WXYZ
+# from vuer_mjcf.utils.se3.se3_mujoco import Vector3, WXYZ
 def compose(pos1, mujoco_quat1, pos2):
     """
     Compose pos1 + rotation(mujoco_quat1) applied to pos2.
@@ -172,7 +172,7 @@ class WidowXArm(MocapBody):
                   <body name="{name}-right_finger_link" pos="0.066 -0.01 0">
                     <inertial pos="0.013816 0 0" quat="0.705384 0.705384 0.0493271 0.0493271" mass="0.016246"
                       diaginertia="4.79509e-06 3.7467e-06 1.48651e-06"/>
-                    <joint name="wx250s-right_finger" axis="0 1 0" type="slide" range="-0.04 -0.01" ref="-0.01"/>
+                    <joint name="{name}-right_finger" axis="0 1 0" type="slide" range="-0.04 -0.01" ref="-0.01"/>
                     <geom pos="0 -0.005 0" quat="0 0 1 0" mesh="wx250s_10_gripper_finger" class="{childclass}-visual"/>
                     <geom pos="0 -0.005 0" quat="0 0 1 0" mesh="wx250s_10_gripper_finger" class="{childclass}-collision"/>
                     <geom name="{name}-right-right_g0" pos="0.042 0.009 0.012" class="{childclass}-sphere_collision"/>
@@ -202,16 +202,16 @@ class WidowXArm(MocapBody):
 
         <!-- (keep or adjust your existing couplings from gripper_joint to fingers) -->
         <joint name="left_to_gripper"
-               joint1="wx250s-left_finger"
+               joint1="{name}-left_finger"
                joint2="gripper_joint"
                polycoef="0 0.03 0 0 0"
                solref="0.02 1" solimp="0.9 0.95 0.001"/>
         <joint name="right_to_gripper"
-               joint1="wx250s-right_finger"
+               joint1="{name}-right_finger"
                joint2="gripper_joint"
                polycoef="0 -0.03 0 0 0"
                solref="0.02 1" solimp="0.9 0.95 0.001"/>
-        <weld body1="wx250s-gripper_link" body2="wx250s-mocap"/>
+        <weld body1="{name}-gripper_link" body2="{name}-mocap"/>
 
     </equality>
 

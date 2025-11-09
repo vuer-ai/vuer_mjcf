@@ -4,7 +4,7 @@ from vuer_mjcf.basic_components.concrete_slab import ConcreteSlab
 from single_widow_x_arm import FloatingWidowXArm
 
 def make_schema(mode="cameraready", robot="trossen_widow_x_arm", show_robot=True, **options):
-    from vuer_mujoco.schemas.utils.file import Prettify
+    from vuer_mjcf.utils.file import Prettify
 
     ground = GroundPlane()
     table = ConcreteSlab(pos=[0, 0, 0.6], rgba="0.8 0.8 0.8 1", roughness="0.2")
@@ -26,7 +26,7 @@ if __name__ == "__main__":
     from pathlib import Path
 
     # Set correct assets path
-    assets = str(Path(__file__).parent.parent.parent / "assets" / "robots")
+    assets = str(Path(__file__).parent.parent.parent / "assets")
 
     xml_str = make_schema(assets=assets)
     print("Generated XML for Trossen Table")

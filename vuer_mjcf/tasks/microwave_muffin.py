@@ -4,11 +4,11 @@ import random
 from copy import copy
 import numpy as np
 
-from vuer_mjcf.objects.bowl_0 import ObjaverseMujocoBowl
-from vuer_mjcf.objects.cup_3 import ObjaverseMujocoCup
+from vuer_mjcf.objects.objaverse_mujoco_bowl import ObjaverseMujocoBowl
+from vuer_mjcf.objects.objaverse_mujoco_cup import ObjaverseMujocoCup
 from vuer_mjcf.objects.mj_sdf import MjSDF
 from vuer_mjcf.objects.mug import ObjaverseMujocoMug
-from vuer_mjcf.objects.plate import ObjaverseMujoco
+from vuer_mjcf.objects.plate import ObjaverseMujocoPlate
 from vuer_mjcf.objects.spoon_7 import ObjaverseMujocoSpoon
 from vuer_mjcf.robots.robotiq_2f85 import Robotiq2F85
 from vuer_mjcf.objects.cabinet import KitchenCabinet
@@ -20,20 +20,15 @@ from vuer_mjcf.objects.refrigerator import KitchenFridge
 from vuer_mjcf.objects.room_wall import RoomWall
 from vuer_mjcf.objects.sink_wide import KitchenSinkWide
 from vuer_mjcf.schema import Body, Replicate
-from vuer_mjcf.tasks import add_env
-from vuer_mjcf.tasks.base.lucidxr_task import get_site, init_states
-from vuer_mjcf.tasks.base.mocap_task import MocapTask
 from vuer_mjcf.basic_components.rigs.camera_rig_lower_fov import make_camera_rig
-from vuer_mjcf.tasks._floating_shadowhand import FloatingShadowHand
-from vuer_mjcf.tasks.entrypoint import make_env
-import vuer_mjcf.se3.se3_mujoco as m
+from vuer_mjcf.stage_sets._floating_shadowhand import FloatingShadowHand
+import vuer_mjcf.utils.se3.se3_mujoco as m
 from vuer_mjcf.objects.microwave_scaled import KitchenMicrowave
 from vuer_mjcf.objects.vuer_mug import VuerMug
-from vuer_mjcf.tasks._floating_robotiq import FloatingRobotiq2f85
+from vuer_mjcf.stage_sets._floating_robotiq import FloatingRobotiq2f85
 
 x1, y1 = 0.2, -1
 origin = m.Vector3(-0.7, -0.2, 0.2)
-
 
 def make_schema(mode="production", **kwargs):
     from vuer_mjcf.utils.file import Prettify
@@ -142,169 +137,33 @@ def make_schema(mode="production", **kwargs):
 
     return scene._xml | Prettify()
 
-
-class Fixed(MocapTask):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.set_sites()
-
-    def set_sites(self):
-        self.muffin_site = get_site(self.physics, "cupcake")
-        self.microwave_site = get_site(self.physics, "mw_site")
-
-    def get_reward(self, physics):
-        microwave_door_hinge = physics.named.data.qpos["mw_hinge"]
-        # success if the muffin is outside of the microwave and the door is closed.
-
-        muffin_pos = physics.data.site_xpos[self.muffin_site.id][:2]
-        mw_pos = physics.data.site_xpos[self.microwave_site.id][:2]
-
-        dist = np.linalg.norm(muffin_pos - mw_pos)
-        door_closed = abs(microwave_door_hinge) < 0.20
-        reward = float((dist > 0.3) and door_closed)
-        # print(f"Distance: {dist}, Reward: {reward}")
-        return reward
-
-
-class Random(Fixed):
-    box_qpos_addr = 1
-    d = 0.02
-    xy_limits = [-0.08, 0.08], [-0.08, 0.08]
-    xy_reject = None
-    yaw_limits = (-np.pi, np.pi)  # ← add a range for yaw
-    initial_pos = [0.4, 0.225, 0.82]
-
-    xy_poses = init_states(xy_limits, d, xy_reject)
-    print(f"Length: {len(xy_poses)}")
-    pose_buffer = None
-
-    @classmethod
-    def random_state(
-        cls,
-        qpos=None,
-        quat=None,
-        addr=box_qpos_addr,
-        index=None,
-        mocap_pos=None,
-        **kwargs,
-    ):
-        if index is None:
-            if not cls.pose_buffer:
-                cls.pose_buffer = copy(cls.xy_poses)
-                random.shuffle(cls.pose_buffer)
-
-            x, y = cls.pose_buffer.pop(0)
-            print(f"Randomly selected pose: {x}, {y}")
-        else:
-            x, y = cls.xy_poses[index]
-
-        new_qpos = qpos.copy()
-        new_qpos[addr] = cls.initial_pos[0] + x
-        new_qpos[addr + 1] = cls.initial_pos[1] + y
-        new_qpos[addr + 2] = cls.initial_pos[2]
-
-        # Optional Gaussian noise on mocap
-        if mocap_pos is not None:
-            mocap_pos = mocap_pos.copy()
-            mocap_pos += np.random.normal(0.0, 0.005, mocap_pos.shape)
-
-        return dict(qpos=new_qpos, quat=quat, mocap_pos=mocap_pos, **kwargs)
-
-
-def register(strict=False):
-    add_env(
-        env_id="MicrowaveMuffin-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=Fixed,
-            xml_renderer=make_schema,
-            camera_names=["front", "front_r", "wrist"],
-            workdir=Path(__file__).parent,
-            mode="multiview",
-        ),
-        strict=strict,
-    )
-
-    add_env(
-        env_id="MicrowaveMuffin-Random-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=Random,
-            xml_renderer=make_schema,
-            camera_names=["front", "front_r", "wrist"],
-            workdir=Path(__file__).parent,
-            mode="multiview",
-            keyframe_file="microwave_muffin.frame.yaml",
-        ),
-        strict=strict,
-    )
-
-    add_env(
-        env_id="MicrowaveMuffin-Random-lucid-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=Random,
-            xml_renderer=make_schema,
-            camera_names=["front", "front_r", "wrist"],
-            workdir=Path(__file__).parent,
-            mode="lucid",
-            object_keys=["cupcake", "mw"],
-        ),
-        strict=strict,
-    )
-    add_env(
-        env_id="MicrowaveMuffin-Random-gsplat-cic_4th_nook",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=Random,
-            xml_renderer=lambda **kwargs: make_schema(production=False,**kwargs),
-            camera_names=["front", "front_r", "wrist"],
-            workdir=Path(__file__).parent,
-            mode="gsplat",
-            gsplat_path = f"{os.environ['LUCIDSIM_EVAL_DATASETS']}/splats/cic_4th_nook",
-            transform_path = f"{os.environ['LUCIDSIM_EVAL_DATASETS']}/microwave_muffin/cic_4th_nook",
-            invisible_prefix=["mw", "cupcake", "gripper"],
-        ),
-        strict=strict,
-    )
-    add_env(
-        env_id="MicrowaveMuffin-Random-gsplat-cic_11th_kitchen",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=Random,
-            xml_renderer=lambda **kwargs: make_schema(production=False,**kwargs),
-            camera_names=["front", "front_r", "wrist"],
-            workdir=Path(__file__).parent,
-            mode="gsplat",
-            gsplat_path = f"{os.environ['LUCIDSIM_EVAL_DATASETS']}/splats/cic_11th_kitchen",
-            transform_path = f"{os.environ['LUCIDSIM_EVAL_DATASETS']}/microwave_muffin/cic_11th_kitchen",
-            invisible_prefix=["mw", "cupcake", "gripper"],
-        ),
-        strict=strict,
-    )
-    add_env(
-        env_id="MicrowaveMuffin-Random-gsplat-mit_medical_wood_chair",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=Random,
-            xml_renderer=lambda **kwargs: make_schema(production=False,**kwargs),
-            camera_names=["front", "front_r", "wrist"],
-            workdir=Path(__file__).parent,
-            mode="gsplat",
-            gsplat_path = f"{os.environ['LUCIDSIM_EVAL_DATASETS']}/splats/mit_medical_wood_chair",
-            transform_path = f"{os.environ['LUCIDSIM_EVAL_DATASETS']}/microwave_muffin/mit_medical_wood_chair",
-            invisible_prefix=["mw", "cupcake", "gripper"],
-        ),
-        strict=strict,
-    )
-
-
 if __name__ == "__main__":
-    from vuer_mjcf.utils.file import Save
+    import tempfile
+    from pathlib import Path
 
-    make_schema() | Save(__file__.replace(".py", ".mjcf.xml"))
+    xml_str = make_schema()
+    print("Generated XML for Microwave Muffin task")
+    print(xml_str)
 
-    # from vuer_mjcf.tasks import make
-    # env = make("MicrowaveMuffin-Random-v1")
-    # env.unwrapped.env.physics.named.data.qpos
-    # env.reset()
+    try:
+        import mujoco
+        import mujoco.viewer
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+            f.write(xml_str)
+            temp_path = f.name
+
+        try:
+            model = mujoco.MjModel.from_xml_path(temp_path)
+            print("✓ Microwave Muffin task loaded successfully!")
+            print(f"  - Number of bodies: {model.nbody}")
+
+            data = mujoco.MjData(model)
+            print("Launching interactive viewer...")
+            mujoco.viewer.launch(model, data)
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+    except ImportError:
+        print("MuJoCo not available")
+    except Exception as e:
+        print(f"✗ Error: {e}")
+        raise

@@ -39,7 +39,7 @@ class FloatingXHand(Mjcf):
         light_rig = make_lighting_rig(self._pos)
 
         hand1 = XHandRight(
-            assets="xhand_right",
+            assets="robots/xhand_right",
             attributes={"name": "x_hand_right"},
             # set this to a small number to avoid unreasonable forces.
             pos=self._pos + [0, 0.15, 0.3],
@@ -50,7 +50,7 @@ class FloatingXHand(Mjcf):
 
         if bimanual:
             hand2 = XHandLeft(
-                assets="xhand_left",
+                assets="robots/xhand_left",
                 attributes={"name": "x_hand_left"},
                 # set this to a small number to avoid unreasonable forces.
                 pos=self._pos + [0, -0.15, 0.3],
@@ -71,10 +71,10 @@ class FloatingXHand(Mjcf):
 
 
 def make_schema(**options):
-    from vuer_mujoco.schemas.utils.file import Prettify
+    from vuer_mjcf.utils.file import Prettify
     from pathlib import Path
 
-    assets = str(Path(__file__).parent.parent.parent / "assets" / "robots")
+    assets = str(Path(__file__).parent.parent.parent / "assets")
     ground = GroundPlane()
     scene = FloatingXHand(ground, assets=assets, **options)
 

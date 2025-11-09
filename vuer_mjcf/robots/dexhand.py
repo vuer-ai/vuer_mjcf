@@ -3011,7 +3011,7 @@ class DexHandLeft(Body):
     """
 
 class DexHandRight(Body):
-    assets: str = "dexhand"
+    assets: str = "robots/dexhand"
     forearm_body: bool = False
     show_mocap: bool = True
     site_alpha: float = 0.0

@@ -2,10 +2,10 @@ import os
 
 from vuer_mjcf.schema.schema import Body, Mjcf, MocapBody
 from vuer_mjcf.schema.base import Xml
-from utils.transform import compose
+from vuer_mjcf.utils.transform import compose
 # from vuer_mjcf.basic_components.rigs.camera_rig import make_camera_rig
 # from vuer_mjcf.basic_components.rigs.lighting_rig import make_lighting_rig
-# from vuer_mjcf.se3.se3_mujoco import Vector3, WXYZ
+# from vuer_mjcf.utils.se3.se3_mujoco import Vector3, WXYZ
 
 class X7(MocapBody):
     """

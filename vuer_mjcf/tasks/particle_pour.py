@@ -5,16 +5,12 @@ import numpy as np
 from vuer_mjcf.objects.vuer_mug import VuerMug
 from vuer_mjcf.basic_components.rigs.camera_rig_hand import make_camera_rig
 from vuer_mjcf.schema import Replicate, Body
-from vuer_mjcf.tasks.base.lucidxr_task import init_states
-from vuer_mjcf.tasks.base.mocap_task import MocapTask
 from vuer_mjcf.third_party.robohive.robohive_object import RobohiveObj
-from vuer_mjcf.tasks._floating_shadowhand import FloatingShadowHand
-
+from vuer_mjcf.stage_sets._floating_shadowhand import FloatingShadowHand
 
 center = 0
 x1, y1 = center - 0.05, -0.025
 x2, y2 = center + 0.17, 0.0
-
 
 def get_initial_positions():
     base_pos = np.array([0.295, 0.195, 0.85])
@@ -31,7 +27,6 @@ def get_initial_positions():
                 positions.append(pos)
 
     return np.array(positions)
-
 
 def make_schema(**_):
     from vuer_mjcf.utils.file import Prettify
@@ -83,7 +78,7 @@ def make_schema(**_):
 
     vuer_mug = VuerMug(pos=[0.3, -0.2, 0.8])
     # mujoco_mug = MuJoCoMug(pos=[0.3, 0.2, 0.8])
-    from vuer_mjcf.objects.cup_3 import ObjaverseMujocoCup
+    from vuer_mjcf.objects.objaverse_mujoco_cup import ObjaverseMujocoCup
 
     cup = ObjaverseMujocoCup(
         assets="kitchen/cup",
@@ -121,172 +116,33 @@ def make_schema(**_):
 
     return scene._xml | Prettify()
 
-
-class Fixed(MocapTask):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.mug_site = None
-        self.tree_site = None
-        self.gripper_site = None
-
-    def get_reward(self, physics):
-        # if all of the particles are d close to the vuer mug's position
-        reward = 0
-        # get ball positions
-        ball_positions = np.array([physics.named.data.qpos[qpos_start : qpos_start + 3] for qpos_start in self.ball_qpos_addrs])
-
-        mug_qpos_addr = 0
-        vuer_mug_position = physics.named.data.qpos[mug_qpos_addr : mug_qpos_addr + 3]
-
-        mask = np.linalg.norm(ball_positions - vuer_mug_position, axis=1) < 0.05
-
-        if np.all(mask):
-            reward = 1
-
-        return reward
-
-
-class CupRandom(Fixed):
-    cup_qpos_addr = 7
-    ball_qpos_addrs = [7 * i for i in range(2, 14)]
-    xy_limits = [-0.1, 0.1], [-0.1, 0.1]
-    d = 0.03
-    xy_poses = init_states(xy_limits, d, reject=None)
-
-    print("the length is", len(xy_poses))
-    pose_buffer = None
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    @classmethod
-    def random_state(
-        cls,
-        qpos=None,
-        quat=None,
-        addr=None,
-        index=None,
-        mocap_pos=None,
-        **kwargs,
-    ):
-        import random
-        from copy import copy
-
-        if index is None:
-            if not cls.pose_buffer:
-                cls.pose_buffer = copy(cls.xy_poses)
-                random.shuffle(cls.pose_buffer)
-
-            x, y = cls.pose_buffer.pop(0)
-        else:
-            x, y = cls.xy_poses[index]
-
-        new_qpos = qpos.copy()
-
-        new_qpos[cls.cup_qpos_addr : cls.cup_qpos_addr + 2] = [0.3 + x, 0.2 + y]
-        for addr_start, initial_position in zip(cls.ball_qpos_addrs, get_initial_positions()):
-            new_qpos[addr_start : addr_start + 3] = [initial_position[0] + x, initial_position[1] + y, initial_position[2]]
-
-        # Add Gaussian noise to mocap position
-        # if mocap_pos is not None:
-        #     mocap_pos = mocap_pos.copy()
-        #     noise = np.random.normal(loc=0.0, scale=0.05, size=mocap_pos.shape)  # std=5mm
-        #     mocap_pos += noise
-
-        return dict(qpos=new_qpos, quat=quat, mocap_pos=mocap_pos, **kwargs)
-
-
-def register(strict=True, **_):
-    from vuer_mjcf.tasks import add_env
-    from vuer_mjcf.tasks.entrypoint import make_env
-
-    add_env(
-        env_id="ParticlePour-fixed-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=Fixed,
-            camera_names=["left", "right", "wrist"],
-            xml_path="particle_pour.mjcf.xml",
-            keyframe_file="particle_pour.frame.yaml",
-            workdir=Path(__file__).parent,
-        ),
-        strict=strict,
-    )
-
-    add_env(
-        env_id="ParticlePour-cup_rand-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=CupRandom,
-            camera_names=["left", "right", "wrist"],
-            xml_path="particle_pour.mjcf.xml",
-            keyframe_file="particle_pour.frame.yaml",
-            workdir=Path(__file__).parent,
-        ),
-        strict=strict,
-    )
-
-    add_env(
-        env_id="ParticlePour-cup_rand-dr-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            xml_path="particle_pour.mjcf.xml",
-            task=CupRandom,
-            workdir=Path(__file__).parent,
-            camera_names=["left", "right", "wrist"],
-            keyframe_file="particle_pour.frame.yaml",
-            mode="domain_rand",
-            color_randomization_args=dict(ignore_geom_names=["particle*", "vuer-mug*", "cup*", "rh_*"]),
-            camera_randomization_args=dict(camera_names=["left", "right"]),
-        ),
-        strict=strict,
-    )
-
-    add_env(
-        env_id="ParticlePour-cup_rand-dr-eval-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            xml_path="particle_pour.mjcf.xml",
-            task=CupRandom,
-            workdir=Path(__file__).parent,
-            camera_names=["left", "right", "wrist"],
-            keyframe_file="particle_pour.frame.yaml",
-            mode="domain_rand",
-            color_randomization_args=dict(ignore_geom_names=["particle*", "vuer-mug*", "cup*", "rh_*"]),
-            randomize_camera=False,
-            randomize_every_n_steps=1_000,
-        ),
-        strict=strict,
-    )
-
-    add_env(
-        env_id="ParticlePour-cup_rand-lucid-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            xml_path="particle_pour.mjcf.xml",
-            task=CupRandom,
-            workdir=Path(__file__).parent,
-            camera_names=["left", "right", "wrist"],
-            keyframe_file="particle_pour.frame.yaml",
-            mode="lucid",
-            object_keys=["vuer-mug"],
-            invisible_prefix=["particle", "vuer-mug", "cup", "rh_"],
-        ),
-        strict=strict,
-    )
-
-
 if __name__ == "__main__":
-    from vuer_mjcf.utils.file import Save
+    import tempfile
+    from pathlib import Path
 
-    make_schema() | Save(__file__.replace(".py", ".mjcf.xml"))
+    xml_str = make_schema()
+    print("Generated XML for Particle Pour task")
+    print(xml_str)
 
-    # register()
-    #
-    # from vuer_mjcf.tasks import make
-    #
-    # env = make("ParticlePour-fixed-v1", strict=False)
-    #
-    # model = env.unwrapped.env.physics.model
-    # all_geom_names = [f"{model.geom(i).name}_{i}" for i in range(model.ngeom)]
-    # # env.
+    try:
+        import mujoco
+        import mujoco.viewer
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+            f.write(xml_str)
+            temp_path = f.name
+
+        try:
+            model = mujoco.MjModel.from_xml_path(temp_path)
+            print("✓ Particle Pour task loaded successfully!")
+            print(f"  - Number of bodies: {model.nbody}")
+
+            data = mujoco.MjData(model)
+            print("Launching interactive viewer...")
+            mujoco.viewer.launch(model, data)
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+    except ImportError:
+        print("MuJoCo not available")
+    except Exception as e:
+        print(f"✗ Error: {e}")
+        raise

@@ -58,11 +58,11 @@ class FloatingWidowXArm(Mjcf):
         )
 
 def make_schema(mode="cameraready", robot="trossen_widow_x_arm", show_robot=True, **options):
-    from vuer_mujoco.schemas.utils.file import Prettify
-    from vuer_mujoco.schemas.utils.file import Save
+    from vuer_mjcf.utils.file import Prettify
+    from vuer_mjcf.utils.file import Save
     from pathlib import Path
 
-    assets = str(Path(__file__).parent.parent.parent / "assets" / "robots")
+    assets = str(Path(__file__).parent.parent.parent / "assets")
     ground = GroundPlane()
 
     # children = (ground,)

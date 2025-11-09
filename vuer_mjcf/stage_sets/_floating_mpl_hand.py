@@ -13,7 +13,7 @@ class FloatingMPLHand(Mjcf):
     }
 
     _preamble = """
-    <compiler angle="radian" autolimits="true" assetdir="{assets}" meshdir="{assets}" texturedir="{assets}"/>
+    <compiler angle="radian" autolimits="true" assetdir="{assets}" meshdir="{assets}/mesh" texturedir="{assets}/texture"/>
 
     <visual>
       <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
@@ -40,7 +40,7 @@ class FloatingMPLHand(Mjcf):
         light_rig = make_lighting_rig(self._pos)
 
         hand1 = MPLRight(
-            assets="mpl",
+            assets="mpl_hand",
             attributes={"name": "mpl_right"},
             # set this to a small number to avoid unreasonable forces.
             pos=self._pos + [0, 0, 0.3],
@@ -63,10 +63,10 @@ class FloatingMPLHand(Mjcf):
 
 
 def make_schema(**options):
-    from vuer_mujoco.schemas.utils.file import Prettify
+    from vuer_mjcf.utils.file import Prettify
     from pathlib import Path
 
-    assets = str(Path(__file__).parent.parent.parent / "assets" / "robots")
+    assets = str(Path(__file__).parent.parent.parent / "assets")
     ground = GroundPlane()
     scene = FloatingMPLHand(ground, assets=assets, **options)
 

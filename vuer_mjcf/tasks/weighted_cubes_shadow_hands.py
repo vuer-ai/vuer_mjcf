@@ -1,41 +1,45 @@
 from pathlib import Path
 
-from vuer_mjcf.tasks import add_env
-from vuer_mjcf.tasks._floating_shadowhand import FloatingShadowHand
-from vuer_mjcf.tasks._weighted_cubes import create_boxes
-from vuer_mjcf.tasks.entrypoint import make_env
-
+from vuer_mjcf.stage_sets._floating_shadowhand import FloatingShadowHand
+from vuer_mjcf.objects._weighted_cubes import create_boxes
 
 def make_schema():
-    from vuer_mjcf import Prettify, Save
+    from vuer_mjcf.utils.file import Prettify, Save
 
     scene = FloatingShadowHand(
         *create_boxes(),
-        cameras.right_camera,
-        cameras.right_camera_r,
-        cameras.front_camera,
-        cameras.top_camera,
-        cameras.left_camera,
-        cameras.back_camera,
         pos=[-0.5, 0, 0.8],
     )
 
     return scene._xml | Prettify()
 
-
-def register():
-    add_env(
-        env_id="Weighted_cubes_shadow_hands-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            xml_path="weighted_cubes_shadow_hands.mjcf.xml",
-            workdir=Path(__file__).parent,
-            mode="multiview",
-        ),
-    )
-
-
 if __name__ == "__main__":
-    from vuer_mjcf.utils.file import Save
+    import tempfile
+    from pathlib import Path
 
-    make_schema() | Save(__file__.replace(".py", ".mjcf.xml"))
+    xml_str = make_schema()
+    print("Generated XML for Weighted Cubes Shadow Hands task")
+    print(xml_str)
+
+    try:
+        import mujoco
+        import mujoco.viewer
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+            f.write(xml_str)
+            temp_path = f.name
+
+        try:
+            model = mujoco.MjModel.from_xml_path(temp_path)
+            print("✓ Weighted Cubes Shadow Hands task loaded successfully!")
+            print(f"  - Number of bodies: {model.nbody}")
+
+            data = mujoco.MjData(model)
+            print("Launching interactive viewer...")
+            mujoco.viewer.launch(model, data)
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+    except ImportError:
+        print("MuJoCo not available")
+    except Exception as e:
+        print(f"✗ Error: {e}")
+        raise

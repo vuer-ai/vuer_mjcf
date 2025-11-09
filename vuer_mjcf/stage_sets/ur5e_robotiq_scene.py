@@ -41,11 +41,11 @@ class UR5Robotiq2f85(Mjcf):
         # Create UR5 robot with Robotiq gripper
         robot = UR5e(
             name="ur5",
-            assets="ur5e",
+            assets="robots/ur5e",
             pos=self._pos,
             quat=[1, 0, 0, 1],  # Aligned with table scene
             end_effector=Robotiq2F85(
-                assets="robotiq_2f85",
+                assets="robots/robotiq_2f85",
                 attributes={"name": "gripper"},
                 gripper_mass=0.05,
                 pos=[0, 0, 0],  # Position at the end of UR5
@@ -59,11 +59,11 @@ class UR5Robotiq2f85(Mjcf):
         if dual_robot:
             robot_2 = UR5e(
                 name="ur5-2",
-                assets="ur5e",
+                assets="robots/ur5e",
                 pos=self._pos + [0, -0.3, 0],
                 quat=[1, 0, 0, 1],  # Aligned with table scene
                 end_effector=Robotiq2F85(
-                    assets="robotiq_2f85",
+                    assets="robots/robotiq_2f85",
                     attributes={"name": "gripper-2"},
                     gripper_mass=0.05,
                     pos=[0, 0, 0],  # Position at the end of UR5
@@ -88,10 +88,10 @@ class UR5Robotiq2f85(Mjcf):
         )
 
 def make_schema(**options):
-    from vuer_mujoco.schemas.utils.file import Prettify
+    from vuer_mjcf.utils.file import Prettify
     from pathlib import Path
 
-    assets = str(Path(__file__).parent.parent.parent / "assets" / "robots")
+    assets = str(Path(__file__).parent.parent.parent / "assets")
     ground = GroundPlane()
     scene = UR5Robotiq2f85(ground, assets=assets, **options)
 

@@ -6,7 +6,7 @@ from vuer_mjcf.basic_components.rigs.lighting_rig import make_lighting_rig
 from vuer_mjcf.schema import Mjcf
 
 from vuer_mjcf.robots.trossen_widow_x_arm import WidowXArm
-from vuer_mjcf.robots.astribot import AstriBot
+from vuer_mjcf.robots.astribot import Astribot
 from vuer_mjcf.robots.lift import Lift
 from vuer_mjcf.robots.r5a import R5a
 from vuer_mjcf.robots.ur5e import UR5e
@@ -53,7 +53,7 @@ class Menagerie(Mjcf):
             **kwargs
         )
 
-        astribot = AstriBot(
+        astribot = Astribot(
             name="astribot",
             assets="astribot",
             pos= [0, 0, 0],
@@ -113,9 +113,9 @@ class Menagerie(Mjcf):
         )
 
 def make_schema(mode="cameraready", robot="trossen_widow_x_arm", show_robot=True, **options):
-    from vuer_mujoco.schemas.utils.file import Prettify
+    from vuer_mjcf.utils.file import Prettify
     from pathlib import Path
-    assets = str(Path(__file__).parent.parent.parent / "assets" / "robots")
+    assets = str(Path(__file__).parent.parent.parent / "assets")
 
     scene = Menagerie(
         assets=assets,

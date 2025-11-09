@@ -4,7 +4,7 @@ from lxml import etree
 
 from vuer_mjcf.schema import Body
 
-_default = f"{Path(__file__).parent.parent.parent.parent.parent.parent.resolve()}/robohive/robohive/simhive"
+_default = f"{Path(__file__).parent.parent.parent.parent.parent.resolve()}/robohive/robohive/simhive"
 ROBOHIVE_ROOT = os.getenv("ROBOHIVE_ROOT", _default)
 ROBOHIVE_OBJECT_SIM_DIR = f"{ROBOHIVE_ROOT}/object_sim"
 ROBOHIVE_FURNITURE_SIM_DIR = f"{ROBOHIVE_ROOT}/furniture_sim"

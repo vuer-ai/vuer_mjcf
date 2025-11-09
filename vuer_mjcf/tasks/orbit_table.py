@@ -2,18 +2,11 @@ from pathlib import Path
 
 from vuer_mjcf.schema import Body
 from vuer_mjcf.objects.mj_sdf import MjSDF
-from vuer_mjcf.utils.file import Save
 from vuer_mjcf.basic_components.rigs.camera_rig import make_camera_rig
-from vuer_mjcf.components.concrete_slab import ConcreteSlab
+from vuer_mjcf.basic_components.concrete_slab import ConcreteSlab
 from vuer_mjcf.basic_components.rigs.lighting_rig import make_lighting_rig
 
-
-class OpticalTable(Body):
-    assets = "objects"
-    classname = "optical_table"
-    free = True
-    _files = ["model"]
-
+class OrbitTable(Task):
     _attributes = {
         "name": "object",
     }
@@ -79,7 +72,6 @@ class OpticalTable(Body):
         <geom mesh="{classname}-model_13" class="{classname}-visual" material="{name}-mat_14"/>
         """
 
-
 def make_schema(robot="panda", **options):
     from vuer_mjcf.utils.file import Prettify
     from vuer_mjcf.schema import Mjcf
@@ -95,7 +87,7 @@ def make_schema(robot="panda", **options):
 
     optical_table = OpticalTable(
         pos=[0, 0, 0.79],
-        assets="model",
+        assets="optical_table",
         _attributes={"name": "optical_table"},
     )
     lighting = make_lighting_rig(optical_table._pos)
@@ -166,21 +158,33 @@ def make_schema(robot="panda", **options):
 
     return scene._xml | Prettify()
 
-
-def register():
-    from vuer_mjcf.tasks import add_env
-    from vuer_mjcf.tasks.entrypoint import make_env
-
-    add_env(
-        env_id="IsaacOrbit_table-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            xml_path="sort_block.mjcf.xml",
-            workdir=Path(__file__).parent,
-            mode="render",
-        ),
-    )
-
-
 if __name__ == "__main__":
-    make_schema() | Save(__file__.replace(".py", ".mjcf.xml"))
+    import tempfile
+    from pathlib import Path
+
+    xml_str = make_schema()
+    print("Generated XML for Orbit Table task")
+    print(xml_str)
+
+    try:
+        import mujoco
+        import mujoco.viewer
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+            f.write(xml_str)
+            temp_path = f.name
+
+        try:
+            model = mujoco.MjModel.from_xml_path(temp_path)
+            print("✓ Orbit Table task loaded successfully!")
+            print(f"  - Number of bodies: {model.nbody}")
+
+            data = mujoco.MjData(model)
+            print("Launching interactive viewer...")
+            mujoco.viewer.launch(model, data)
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+    except ImportError:
+        print("MuJoCo not available")
+    except Exception as e:
+        print(f"✗ Error: {e}")
+        raise

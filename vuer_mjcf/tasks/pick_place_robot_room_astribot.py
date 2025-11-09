@@ -5,15 +5,12 @@ import numpy as np
 
 from vuer_mjcf.objects.mj_sdf import MjSDF
 from vuer_mjcf.basic_components.rigs.camera_rig_calibrated import make_camera_rig
-from vuer_mjcf.robots.astribot import AstribotRobotiq2f85
-from vuer_mjcf.tasks._floating_robotiq import UR5Robotiq2f85
-from vuer_mjcf.tasks.base.lucidxr_task import get_site, get_geom_id
-from vuer_mjcf.tasks.base.mocap_task import MocapTask
+from vuer_mjcf.stage_sets.astribot_robotiq import AstribotRobotiq2f85
+from vuer_mjcf.stage_sets.ur5e_robotiq_scene import UR5Robotiq2f85
 from vuer_mjcf.objects.mj_obj import MjObj
 from vuer_mjcf.third_party.robohive.robohive_object import RobohiveObj
 from vuer_mjcf.schema import Body
-from vuer_mjcf.components.force_plate import ForcePlate
-from vuer_mjcf.wrappers.domain_randomization_wrapper import DEFAULT_COLOR_ARGS
+from vuer_mjcf.basic_components.force_plate import ForcePlate
 import mink
 
 # scene center is 0.41 + 0.2 / 2 = 0.50
@@ -24,9 +21,7 @@ y_bounds = [0.08, 0.38]
 x_bounds_smaller = [-0.05 + 0.4, 0.15 + 0.4]
 y_bounds_smaller = [0.08, 0.28]
 
-
 goal_x, goal_y = 0.1 + 0.4, -0.30
-
 
 def _compute_look_at_rotation(
     head_pos: np.ndarray,
@@ -123,123 +118,33 @@ def make_schema(**options):
 
     return scene._xml | Prettify()
 
-
-class Fixed(MocapTask):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.gripper_site = get_site(self.physics, "gripper-pinch")
-        self.box = get_site(self.physics, "box-1")
-
-    def get_reward(self, physics):
-        box_pos = physics.data.site_xpos[self.box.id]
-        gripper_pos = physics.data.site_xpos[self.gripper_site.id]
-
-        # Goal area is centered at goal_x, goal_y and has size 0.215 x 0.14
-        goal_center_x = goal_x
-        goal_center_y = goal_y
-        goal_half_width = 0.215
-        goal_half_height = 0.14
-
-        # Bounds of goal area
-        goal_x_min = goal_center_x - goal_half_width
-        goal_x_max = goal_center_x + goal_half_width
-        goal_y_min = goal_center_y - goal_half_height
-        goal_y_max = goal_center_y + goal_half_height
-
-        # Check if box is inside goal area
-        inside_x = goal_x_min <= box_pos[0] <= goal_x_max
-        inside_y = goal_y_min <= box_pos[1] <= goal_y_max
-
-        # print(inside_y, inside_x, gripper_pos[2] - box_pos[2])
-
-        return float(inside_x and inside_y and gripper_pos[2] > 0.05 + box_pos[2])  # Ensure gripper is above the table
-
-
-class SingleBoxRandom(Fixed):
-    box_qpos_addr = 0
-    ball_qpos_addrs = [0]
-    rand_range_x = x_bounds_smaller
-    rand_range_y = y_bounds_smaller
-
-    @classmethod
-    def random_state(
-        cls,
-        qpos=None,
-        quat=None,
-        addr=box_qpos_addr,
-        index=None,
-        mocap_pos=None,
-        **kwargs,
-    ):
-        """Return a new randomized state for a single ball.
-
-        The ball starts at the reference location (``x4``, ``y4``, 0.8) and we
-        add a small uniform offset (\pm2 cm) on *x* and *y* every reset.  The
-        *z*-coordinate remains unchanged so the ball still sits on the table.
-        """
-
-        new_qpos = qpos.copy()
-
-        new_x = np.random.uniform(cls.rand_range_x[0], cls.rand_range_x[1])
-        new_y = np.random.uniform(cls.rand_range_y[0], cls.rand_range_y[1])
-        new_pos = [new_x, new_y, 0.8]
-
-        # Write the new position back to the qpos vector.
-        ball_addr = cls.ball_qpos_addrs[0]
-        new_qpos[ball_addr] = new_pos[0]  # x
-        new_qpos[ball_addr + 1] = new_pos[1]  # y
-        new_qpos[ball_addr + 2] = new_pos[2]  # z (unchanged)
-
-        if mocap_pos is not None:
-            mocap_pos = mocap_pos.copy()
-            mocap_pos += np.random.normal(0.0, 0.005, mocap_pos.shape)
-
-        return dict(qpos=new_qpos, quat=quat, mocap_pos=mocap_pos, **kwargs)
-
-
-DEFAULT_COLOR_ARGS["randomize_local_geom_prefixes"] = ["box", "goal-area"]
-DEFAULT_COLOR_ARGS["local_rgb_interpolation"] = 0.3
-def register(strict=True):
-    from vuer_mjcf.tasks import add_env
-    from vuer_mjcf.tasks.entrypoint import make_env
-
-    add_env(
-        env_id="PickPlaceRobotRoomAstribot-fixed-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            xml_renderer=make_schema,
-            workdir=Path(__file__).parent,
-            camera_names=["wrist", "third-person"],
-            # keyframe_file="pick_place_robot_room.frame.yaml",
-            task=Fixed,
-        ),
-        strict=strict,
-    )
-
 if __name__ == "__main__":
-    from vuer_mjcf.utils.file import Save
+    import tempfile
+    from pathlib import Path
 
-    make_schema() | Save(__file__.replace(".py", ".mjcf.xml"))
-    #
-    # from vuer_mjcf.tasks import make
-    #
-    #
-    # env = make("TheFinalCalibrationEval-fixed-v1")
-    #
-    # obs = env.reset()
-    # from matplotlib import pyplot as plt
-    #
-    # # plt.imshow(obs["left/rgb"])
-    # plt.imsave("left_rgb.png", obs["left/rgb"])
-    # plt.imsave("right_rgb.png", obs["right/rgb"])
-    # plt.imsave("wrist_rgb.png", obs["wrist/rgb"])
-    # save without the borders and keep the resolution the same
-    # plt.axis("off")
-    # plt.imshow(obs["left/rgb"])
-    # plt.show()
+    xml_str = make_schema()
+    print("Generated XML for Pick Place Robot Room Astribot task")
+    print(xml_str)
 
-    # plt.axis("off")
-    # plt.imshow(obs["right/rgb"])
-    # plt.show()
-    # plt.savefig("right_rgb.png", bbox_inches='tight', pad_inches=0)
-    # plt.show()
+    try:
+        import mujoco
+        import mujoco.viewer
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+            f.write(xml_str)
+            temp_path = f.name
+
+        try:
+            model = mujoco.MjModel.from_xml_path(temp_path)
+            print("✓ Pick Place Robot Room Astribot task loaded successfully!")
+            print(f"  - Number of bodies: {model.nbody}")
+
+            data = mujoco.MjData(model)
+            print("Launching interactive viewer...")
+            mujoco.viewer.launch(model, data)
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+    except ImportError:
+        print("MuJoCo not available")
+    except Exception as e:
+        print(f"✗ Error: {e}")
+        raise

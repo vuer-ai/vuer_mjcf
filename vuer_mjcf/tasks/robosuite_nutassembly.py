@@ -1,17 +1,13 @@
 import random
 from pathlib import Path
 
-from vuer_mjcf.utils.file import Save
 from vuer_mjcf.schema import Body
-from vuer_mjcf.tasks import add_env
-from vuer_mjcf.tasks._floating_robotiq import FloatingRobotiq2f85
+from vuer_mjcf.stage_sets._floating_robotiq import FloatingRobotiq2f85
 from vuer_mjcf.third_party.robosuite.robosuite_tablearena import RobosuiteTableArena
-
 
 r, g, b = random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1)
 x1, y1 = random.uniform(-0.5, 0.2), random.uniform(-0.3, 0.3)
 x2, y2 = random.uniform(-0.5, 0.2), random.uniform(-0.3, 0.3)
-
 
 def make_schema(**options):
     from vuer_mjcf.utils.file import Prettify
@@ -113,31 +109,33 @@ def make_schema(**options):
 
     return scene._xml | Prettify()
 
-
-def register():
-    from vuer_mjcf.tasks.entrypoint import make_env
-
-    add_env(
-        env_id="RobosuiteNutassembly-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            xml_path="robosuite_nutassembly.mjcf.xml",
-            workdir=Path(__file__).parent,
-            mode="multiview",
-        ),
-    )
-
-    add_env(
-        env_id="RobosuiteNutassembly-lucid-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            xml_path="robosuite_nutassembly.mjcf.xml",
-            workdir=Path(__file__).parent,
-            mode="lucid",
-            object_prefix="ball",
-        ),
-    )
-
-
 if __name__ == "__main__":
-    make_schema() | Save(__file__.replace(".py", ".mjcf.xml"))
+    import tempfile
+    from pathlib import Path
+
+    xml_str = make_schema()
+    print("Generated XML for Robosuite Nutassembly task")
+    print(xml_str)
+
+    try:
+        import mujoco
+        import mujoco.viewer
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+            f.write(xml_str)
+            temp_path = f.name
+
+        try:
+            model = mujoco.MjModel.from_xml_path(temp_path)
+            print("✓ Robosuite Nutassembly task loaded successfully!")
+            print(f"  - Number of bodies: {model.nbody}")
+
+            data = mujoco.MjData(model)
+            print("Launching interactive viewer...")
+            mujoco.viewer.launch(model, data)
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+    except ImportError:
+        print("MuJoCo not available")
+    except Exception as e:
+        print(f"✗ Error: {e}")
+        raise

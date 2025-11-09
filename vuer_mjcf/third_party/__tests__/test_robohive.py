@@ -1,7 +1,7 @@
 def test_objrobohive():
     from vuer_mjcf.utils.file import Prettify
     from vuer_mjcf.vendors.robohive.robohive_object import RobohiveObj
-    from vuer_mjcf.tasks._floating_robotiq import FloatingRobotiq2f85
+    from vuer_mjcf.stage_sets._floating_robotiq import FloatingRobotiq2f85
 
     table = RobohiveObj(
         object_type="table",

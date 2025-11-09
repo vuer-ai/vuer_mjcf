@@ -6,7 +6,7 @@ from vuer_mjcf.basic_components.rigs.lighting_rig import make_lighting_rig
 from vuer_mjcf.robots.astribot import Astribot
 from vuer_mjcf.robots.robotiq_2f85 import Robotiq2F85
 from vuer_mjcf.schema import Mjcf
-from vuer_mjcf.se3.rot_gs6 import _compute_look_at_rotation
+from vuer_mjcf.utils.se3.rot_gs6 import _compute_look_at_rotation
 
 
 class AstribotRobotiq2f85(Mjcf):
@@ -70,12 +70,12 @@ class AstribotRobotiq2f85(Mjcf):
         # Create UR5 robot with Robotiq gripper
         robot = Astribot(
             name="astribot",
-            assets="astribot",
+            assets="robots/astribot",
             pos=self._pos,
             head_mocap_quat=head_quat,
             quat=[1, 0, 0, 0],  # Aligned with table scene
             left_end_effector=Robotiq2F85(
-                assets="robotiq_2f85",
+                assets="robots/robotiq_2f85",
                 name="left_gripper",
                 gripper_mass=0.05,
                 pos=[0, 0, 0],  # Position at the end of UR5
@@ -86,7 +86,7 @@ class AstribotRobotiq2f85(Mjcf):
                 mocap_quat=right_mocap_quat,
             ),
             right_end_effector=Robotiq2F85(
-                assets="robotiq_2f85",
+                assets="robots/robotiq_2f85",
                 name="right_gripper",
                 gripper_mass=0.05,
                 pos=[0, 0, 0],  # Position at the end of UR5
@@ -121,7 +121,7 @@ def make_schema(**options):
     from vuer_mjcf.utils.file import Prettify
     from pathlib import Path
 
-    assets = str(Path(__file__).parent.parent.parent / "assets" / "robots")
+    assets = str(Path(__file__).parent.parent.parent / "assets")
     ground = GroundPlane()
     scene = AstribotRobotiq2f85(ground, assets=assets, **options)
 

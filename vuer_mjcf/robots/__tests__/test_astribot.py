@@ -9,6 +9,7 @@ def test_astribot():
     # Generate XML
     xml_str = make_schema()
     print(f"Generated XML for AstriBot scene")
+    print(xml_str)
 
     # Try to load into MuJoCo
     try:

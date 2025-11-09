@@ -45,7 +45,7 @@ class FloatingDexHand(Mjcf):
 
         hand1 = DexHandRight(
             show_mocap=True,
-            assets="dexhand",
+            assets="robots/dexhand",
             attributes={"name": "dex_hand_right"},
             # set this to a small number to avoid unreasonable forces.
             pos=self._pos + [0, 0.15, 0.3],
@@ -57,7 +57,7 @@ class FloatingDexHand(Mjcf):
         if bimanual:
             hand2 = DexHandLeft(
                 show_mocap=False,
-                assets="dexhand",
+                assets="robots/dexhand",
                 attributes={"name": "dex_hand_left"},
                 # set this to a small number to avoid unreasonable forces.
                 pos=self._pos + [0, -0.15, 0.3],
@@ -78,10 +78,10 @@ class FloatingDexHand(Mjcf):
 
 
 def make_schema(**options):
-    from vuer_mujoco.schemas.utils.file import Prettify
+    from vuer_mjcf.utils.file import Prettify
     from pathlib import Path
 
-    assets = str(Path(__file__).parent.parent.parent / "assets" / "robots")
+    assets = str(Path(__file__).parent.parent.parent / "assets")
     ground = GroundPlane()
     scene = FloatingDexHand(ground, assets=assets, **options)
 

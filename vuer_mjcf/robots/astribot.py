@@ -5,7 +5,7 @@ from vuer_mjcf.schema.base import Xml
 from vuer_mjcf.utils.transform import compose
 # from vuer_mjcf.basic_components.rigs.camera_rig import make_camera_rig
 # from vuer_mjcf.basic_components.rigs.lighting_rig import make_lighting_rig
-# from vuer_mjcf.se3.se3_mujoco import Vector3, WXYZ
+# from vuer_mjcf.utils.se3.se3_mujoco import Vector3, WXYZ
 
 
 class Astribot(MocapBody):
@@ -37,7 +37,7 @@ class Astribot(MocapBody):
     </body>
     """
 
-    _postamble = """
+    _mocaps_equality = """
     <equality>
       <weld name="{name}-arm_right_tool-weld" site1="{name}-arm_right_tool" site2="{name}-arm_right_tool_target_site" solref="0.003 1" solimp="0.9 0.95 0.001"/>
       <weld name="{name}-arm_left_tool-weld" site1="{name}-arm_left_tool" site2="{name}-arm_left_tool_target_site" solref="0.003 1" solimp="0.9 0.95 0.001"/>
@@ -249,6 +249,7 @@ class Astribot(MocapBody):
         values = self._format_dict()
 
         self._mocaps = self._mocaps_raw.format(**values)
+        self._mocaps_body = self._mocaps
 
 if __name__ == '__main__':
     from vuer_mjcf.basic_components.mj_ground_plane import GroundPlane

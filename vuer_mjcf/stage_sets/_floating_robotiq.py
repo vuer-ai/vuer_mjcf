@@ -91,7 +91,7 @@ class FloatingRobotiq2f85(Mjcf):
         else:
             # Original floating gripper implementation
             gripper = Robotiq2F85(
-                assets="robotiq_2f85",
+                assets="robots/robotiq_2f85",
                 attributes={"name": "gripper"},
                 gripper_mass=0.05,
                 pos=self._pos + [0, 0, 0.3] if not dual_gripper else self._pos + [0, 0.15, 0.3],
@@ -103,7 +103,7 @@ class FloatingRobotiq2f85(Mjcf):
 
             if dual_gripper:
                 gripper_2 = Robotiq2F85(
-                    assets="robotiq_2f85",
+                    assets="robots/robotiq_2f85",
                     attributes={"name": "gripper-2"},
                     gripper_mass=0.05,
                     pos=self._pos + [0, -0.15, 0.3],
@@ -146,10 +146,10 @@ class FloatingBaseXY(Body):
 
 
 def make_schema(**options):
-    from vuer_mujoco.schemas.utils.file import Prettify
+    from vuer_mjcf.utils.file import Prettify
     from pathlib import Path
 
-    assets = str(Path(__file__).parent.parent.parent / "assets" / "robots")
+    assets = str(Path(__file__).parent.parent.parent / "assets")
     ground = GroundPlane()
     scene = FloatingRobotiq2f85(ground, assets=assets, **options)
 

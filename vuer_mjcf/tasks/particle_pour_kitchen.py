@@ -2,10 +2,10 @@ from pathlib import Path
 
 import numpy as np
 
-from vuer_mjcf.objects.bowl_0 import ObjaverseMujocoBowl
-from vuer_mjcf.objects.cup_3 import ObjaverseMujocoCup
+from vuer_mjcf.objects.objaverse_mujoco_bowl import ObjaverseMujocoBowl
+from vuer_mjcf.objects.objaverse_mujoco_cup import ObjaverseMujocoCup
 from vuer_mjcf.objects.mug import ObjaverseMujocoMug
-from vuer_mjcf.objects.plate import ObjaverseMujoco
+from vuer_mjcf.objects.plate import ObjaverseMujocoPlate
 from vuer_mjcf.objects.spoon_7 import ObjaverseMujocoSpoon
 from vuer_mjcf.objects.cabinet import KitchenCabinet
 from vuer_mjcf.objects.dishwasher import KitchenDishwasher
@@ -17,21 +17,16 @@ from vuer_mjcf.objects.refrigerator import KitchenFridge
 from vuer_mjcf.objects.room_wall import RoomWall
 from vuer_mjcf.objects.sink_wide import KitchenSinkWide
 from vuer_mjcf.schema import Body, Replicate
-from vuer_mjcf.tasks import add_env
-from vuer_mjcf.tasks.base.lucidxr_task import get_site
-from vuer_mjcf.tasks.base.mocap_task import MocapTask
 from vuer_mjcf.basic_components.rigs.camera_rig import make_camera_rig
-from vuer_mjcf.tasks._floating_robotiq import FloatingRobotiq2f85
-from vuer_mjcf.tasks._floating_shadowhand import FloatingShadowHand
+from vuer_mjcf.stage_sets._floating_robotiq import FloatingRobotiq2f85
+from vuer_mjcf.stage_sets._floating_shadowhand import FloatingShadowHand
 from vuer_mjcf.schema import Composite
-from vuer_mjcf.tasks.entrypoint import make_env
 
 # Generate random values for r, g, and b
 # r, g, b = random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1)
 
-
 def make_schema():
-    import vuer_mjcf.se3.se3_mujoco as m
+    import vuer_mjcf.utils.se3.se3_mujoco as m
     from vuer_mjcf.utils.file import Prettify
 
     origin = m.Vector3(-1, -1, 0)
@@ -215,21 +210,33 @@ def make_schema():
 
     return scene._xml | Prettify()
 
-def register():
-    add_env(
-        env_id="Particle_pour_kitchen-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=MocapTask,
-            camera_names=["right", "left", "front"],
-            xml_path="particle_pour_kitchen.mjcf.xml",
-            workdir=Path(__file__).parent,
-            mode="multiview",
-        ),
-    )
-
-
 if __name__ == "__main__":
-    from vuer_mjcf.utils.file import Save
+    import tempfile
+    from pathlib import Path
 
-    make_schema() | Save(__file__.replace(".py", ".mjcf.xml"))
+    xml_str = make_schema()
+    print("Generated XML for Particle Pour Kitchen task")
+    print(xml_str)
+
+    try:
+        import mujoco
+        import mujoco.viewer
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+            f.write(xml_str)
+            temp_path = f.name
+
+        try:
+            model = mujoco.MjModel.from_xml_path(temp_path)
+            print("✓ Particle Pour Kitchen task loaded successfully!")
+            print(f"  - Number of bodies: {model.nbody}")
+
+            data = mujoco.MjData(model)
+            print("Launching interactive viewer...")
+            mujoco.viewer.launch(model, data)
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+    except ImportError:
+        print("MuJoCo not available")
+    except Exception as e:
+        print(f"✗ Error: {e}")
+        raise

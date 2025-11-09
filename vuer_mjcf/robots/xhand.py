@@ -2,7 +2,7 @@ from vuer_mjcf.schema.schema import MocapBody
 
 
 class XHandLeft(MocapBody):
-    assets: str = "x_hand"
+    assets: str = "robots/x_hand_left"
     forearm_body: bool = False
     show_mocap: bool = True
     site_alpha:float = 0.0
@@ -85,36 +85,36 @@ class XHandLeft(MocapBody):
         <material name="RAL_9003_Signal_White" rgba="0.941 0.941 0.941 1" />
         <material name="default_material" rgba="0.7 0.7 0.7 1" />
         <material name="collision_material" rgba="1.0 0.28 0.1 0.9" />
-        <mesh name="left_hand_link.STL" file="xhand_left/left_hand_link.STL" />
-        <mesh name="left_hand_ee_link.STL" file="xhand_left/left_hand_ee_link.STL" />
-        <mesh name="left_hand_back_link.STL" file="xhand_left/left_hand_back_link.STL" />
-        <mesh name="left_hand_thumb_bend_link.STL" file="xhand_left/left_hand_thumb_bend_link.STL" />
-        <mesh name="left_hand_thumb_rota_link1.STL" file="xhand_left/left_hand_thumb_rota_link1.STL" />
-        <mesh name="left_hand_thumb_rotaback_link1.STL" file="xhand_left/left_hand_thumb_rotaback_link1.STL" />
-        <mesh name="left_hand_thumb_rota_link2.STL" file="xhand_left/left_hand_thumb_rota_link2.STL" />
-        <mesh name="left_hand_thumb_rotaback_link2.STL" file="xhand_left/left_hand_thumb_rotaback_link2.STL" />
-        <mesh name="left_hand_thumb_rota_tip.STL" file="xhand_left/left_hand_thumb_rota_tip.STL" />
-        <mesh name="left_hand_index_bend_link.STL" file="xhand_left/left_hand_index_bend_link.STL" />
-        <mesh name="left_hand_index_rota_link1.STL" file="xhand_left/left_hand_index_rota_link1.STL" />
-        <mesh name="left_hand_index_rotaback_link1.STL" file="xhand_left/left_hand_index_rotaback_link1.STL" />
-        <mesh name="left_hand_index_rota_link2.STL" file="xhand_left/left_hand_index_rota_link2.STL" />
-        <mesh name="left_hand_index_rotaback_link2.STL" file="xhand_left/left_hand_index_rotaback_link2.STL" />
-        <mesh name="left_hand_index_rota_tip.STL" file="xhand_left/left_hand_index_rota_tip.STL" />
-        <mesh name="left_hand_mid_link1.STL" file="xhand_left/left_hand_mid_link1.STL" />
-        <mesh name="left_hand_midback_link1.STL" file="xhand_left/left_hand_midback_link1.STL" />
-        <mesh name="left_hand_mid_link2.STL" file="xhand_left/left_hand_mid_link2.STL" />
-        <mesh name="left_hand_midback_link2.STL" file="xhand_left/left_hand_midback_link2.STL" />
-        <mesh name="left_hand_mid_tip.STL" file="xhand_left/left_hand_mid_tip.STL" />
-        <mesh name="left_hand_ring_link1.STL" file="xhand_left/left_hand_ring_link1.STL" />
-        <mesh name="left_hand_ringback_link1.STL" file="xhand_left/left_hand_ringback_link1.STL" />
-        <mesh name="left_hand_ring_link2.STL" file="xhand_left/left_hand_ring_link2.STL" />
-        <mesh name="left_hand_ringback_link2.STL" file="xhand_left/left_hand_ringback_link2.STL" />
-        <mesh name="left_hand_ring_tip.STL" file="xhand_left/left_hand_ring_tip.STL" />
-        <mesh name="left_hand_pinky_link1.STL" file="xhand_left/left_hand_pinky_link1.STL" />
-        <mesh name="left_hand_pinkyback_link1.STL" file="xhand_left/left_hand_pinkyback_link1.STL" />
-        <mesh name="left_hand_pinky_link2.STL" file="xhand_left/left_hand_pinky_link2.STL" />
-        <mesh name="left_hand_pinkyback_link2.STL" file="xhand_left/left_hand_pinkyback_link2.STL" />
-        <mesh name="left_hand_pinky_tip.STL" file="xhand_left/left_hand_pinky_tip.STL" />
+        <mesh name="left_hand_link.STL" file="{assets}/left_hand_link.STL" />
+        <mesh name="left_hand_ee_link.STL" file="{assets}/left_hand_ee_link.STL" />
+        <mesh name="left_hand_back_link.STL" file="{assets}/left_hand_back_link.STL" />
+        <mesh name="left_hand_thumb_bend_link.STL" file="{assets}/left_hand_thumb_bend_link.STL" />
+        <mesh name="left_hand_thumb_rota_link1.STL" file="{assets}/left_hand_thumb_rota_link1.STL" />
+        <mesh name="left_hand_thumb_rotaback_link1.STL" file="{assets}/left_hand_thumb_rotaback_link1.STL" />
+        <mesh name="left_hand_thumb_rota_link2.STL" file="{assets}/left_hand_thumb_rota_link2.STL" />
+        <mesh name="left_hand_thumb_rotaback_link2.STL" file="{assets}/left_hand_thumb_rotaback_link2.STL" />
+        <mesh name="left_hand_thumb_rota_tip.STL" file="{assets}/left_hand_thumb_rota_tip.STL" />
+        <mesh name="left_hand_index_bend_link.STL" file="{assets}/left_hand_index_bend_link.STL" />
+        <mesh name="left_hand_index_rota_link1.STL" file="{assets}/left_hand_index_rota_link1.STL" />
+        <mesh name="left_hand_index_rotaback_link1.STL" file="{assets}/left_hand_index_rotaback_link1.STL" />
+        <mesh name="left_hand_index_rota_link2.STL" file="{assets}/left_hand_index_rota_link2.STL" />
+        <mesh name="left_hand_index_rotaback_link2.STL" file="{assets}/left_hand_index_rotaback_link2.STL" />
+        <mesh name="left_hand_index_rota_tip.STL" file="{assets}/left_hand_index_rota_tip.STL" />
+        <mesh name="left_hand_mid_link1.STL" file="{assets}/left_hand_mid_link1.STL" />
+        <mesh name="left_hand_midback_link1.STL" file="{assets}/left_hand_midback_link1.STL" />
+        <mesh name="left_hand_mid_link2.STL" file="{assets}/left_hand_mid_link2.STL" />
+        <mesh name="left_hand_midback_link2.STL" file="{assets}/left_hand_midback_link2.STL" />
+        <mesh name="left_hand_mid_tip.STL" file="{assets}/left_hand_mid_tip.STL" />
+        <mesh name="left_hand_ring_link1.STL" file="{assets}/left_hand_ring_link1.STL" />
+        <mesh name="left_hand_ringback_link1.STL" file="{assets}/left_hand_ringback_link1.STL" />
+        <mesh name="left_hand_ring_link2.STL" file="{assets}/left_hand_ring_link2.STL" />
+        <mesh name="left_hand_ringback_link2.STL" file="{assets}/left_hand_ringback_link2.STL" />
+        <mesh name="left_hand_ring_tip.STL" file="{assets}/left_hand_ring_tip.STL" />
+        <mesh name="left_hand_pinky_link1.STL" file="{assets}/left_hand_pinky_link1.STL" />
+        <mesh name="left_hand_pinkyback_link1.STL" file="{assets}/left_hand_pinkyback_link1.STL" />
+        <mesh name="left_hand_pinky_link2.STL" file="{assets}/left_hand_pinky_link2.STL" />
+        <mesh name="left_hand_pinkyback_link2.STL" file="{assets}/left_hand_pinkyback_link2.STL" />
+        <mesh name="left_hand_pinky_tip.STL" file="{assets}/left_hand_pinky_tip.STL" />
       </asset>
     """
     wrist_mount = ""
@@ -347,7 +347,7 @@ class XHandLeft(MocapBody):
 
 
 class XHandRight(MocapBody):
-    assets: str = "x_hand"
+    assets: str = "robots/x_hand"
     forearm_body: bool = False
     show_mocap: bool = False
     site_alpha: float = 0.0
@@ -430,36 +430,36 @@ class XHandRight(MocapBody):
         <material name="RAL_9003_Signal_White" rgba="0.941 0.941 0.941 1" />
         <material name="default_material" rgba="0.7 0.7 0.7 1" />
         <material name="collision_material" rgba="1.0 0.28 0.1 0.9" />
-        <mesh name="right_hand_link.STL" file="xhand_right/right_hand_link.STL" />
-        <mesh name="right_hand_ee_link.STL" file="xhand_right/right_hand_ee_link.STL" />
-        <mesh name="right_hand_back_link.STL" file="xhand_right/right_hand_back_link.STL" />
-        <mesh name="right_hand_thumb_bend_link.STL" file="xhand_right/right_hand_thumb_bend_link.STL" />
-        <mesh name="right_hand_thumb_rota_link1.STL" file="xhand_right/right_hand_thumb_rota_link1.STL" />
-        <mesh name="right_hand_thumb_rotaback_link1.STL" file="xhand_right/right_hand_thumb_rotaback_link1.STL" />
-        <mesh name="right_hand_thumb_rota_link2.STL" file="xhand_right/right_hand_thumb_rota_link2.STL" />
-        <mesh name="right_hand_thumb_rotaback_link2.STL" file="xhand_right/right_hand_thumb_rotaback_link2.STL" />
-        <mesh name="right_hand_thumb_rota_tip.STL" file="xhand_right/right_hand_thumb_rota_tip.STL" />
-        <mesh name="right_hand_index_bend_link.STL" file="xhand_right/right_hand_index_bend_link.STL" />
-        <mesh name="right_hand_index_rota_link1.STL" file="xhand_right/right_hand_index_rota_link1.STL" />
-        <mesh name="right_hand_index_rotaback_link1.STL" file="xhand_right/right_hand_index_rotaback_link1.STL" />
-        <mesh name="right_hand_index_rota_link2.STL" file="xhand_right/right_hand_index_rota_link2.STL" />
-        <mesh name="right_hand_index_rotaback_link2.STL" file="xhand_right/right_hand_index_rotaback_link2.STL" />
-        <mesh name="right_hand_index_rota_tip.STL" file="xhand_right/right_hand_index_rota_tip.STL" />
-        <mesh name="right_hand_mid_link1.STL" file="xhand_right/right_hand_mid_link1.STL" />
-        <mesh name="right_hand_midback_link1.STL" file="xhand_right/right_hand_midback_link1.STL" />
-        <mesh name="right_hand_mid_link2.STL" file="xhand_right/right_hand_mid_link2.STL" />
-        <mesh name="right_hand_midback_link2.STL" file="xhand_right/right_hand_midback_link2.STL" />
-        <mesh name="right_hand_mid_tip.STL" file="xhand_right/right_hand_mid_tip.STL" />
-        <mesh name="right_hand_ring_link1.STL" file="xhand_right/right_hand_ring_link1.STL" />
-        <mesh name="right_hand_ringback_link1.STL" file="xhand_right/right_hand_ringback_link1.STL" />
-        <mesh name="right_hand_ring_link2.STL" file="xhand_right/right_hand_ring_link2.STL" />
-        <mesh name="right_hand_ringback_link2.STL" file="xhand_right/right_hand_ringback_link2.STL" />
-        <mesh name="right_hand_ring_tip.STL" file="xhand_right/right_hand_ring_tip.STL" />
-        <mesh name="right_hand_pinky_link1.STL" file="xhand_right/right_hand_pinky_link1.STL" />
-        <mesh name="right_hand_pinkyback_link1.STL" file="xhand_right/right_hand_pinkyback_link1.STL" />
-        <mesh name="right_hand_pinky_link2.STL" file="xhand_right/right_hand_pinky_link2.STL" />
-        <mesh name="right_hand_pinkyback_link2.STL" file="xhand_right/right_hand_pinkyback_link2.STL" />
-        <mesh name="right_hand_pinky_tip.STL" file="xhand_right/right_hand_pinky_tip.STL" />
+        <mesh name="right_hand_link.STL" file="{assets}/right_hand_link.STL" />
+        <mesh name="right_hand_ee_link.STL" file="{assets}/right_hand_ee_link.STL" />
+        <mesh name="right_hand_back_link.STL" file="{assets}/right_hand_back_link.STL" />
+        <mesh name="right_hand_thumb_bend_link.STL" file="{assets}/right_hand_thumb_bend_link.STL" />
+        <mesh name="right_hand_thumb_rota_link1.STL" file="{assets}/right_hand_thumb_rota_link1.STL" />
+        <mesh name="right_hand_thumb_rotaback_link1.STL" file="{assets}/right_hand_thumb_rotaback_link1.STL" />
+        <mesh name="right_hand_thumb_rota_link2.STL" file="{assets}/right_hand_thumb_rota_link2.STL" />
+        <mesh name="right_hand_thumb_rotaback_link2.STL" file="{assets}/right_hand_thumb_rotaback_link2.STL" />
+        <mesh name="right_hand_thumb_rota_tip.STL" file="{assets}/right_hand_thumb_rota_tip.STL" />
+        <mesh name="right_hand_index_bend_link.STL" file="{assets}/right_hand_index_bend_link.STL" />
+        <mesh name="right_hand_index_rota_link1.STL" file="{assets}/right_hand_index_rota_link1.STL" />
+        <mesh name="right_hand_index_rotaback_link1.STL" file="{assets}/right_hand_index_rotaback_link1.STL" />
+        <mesh name="right_hand_index_rota_link2.STL" file="{assets}/right_hand_index_rota_link2.STL" />
+        <mesh name="right_hand_index_rotaback_link2.STL" file="{assets}/right_hand_index_rotaback_link2.STL" />
+        <mesh name="right_hand_index_rota_tip.STL" file="{assets}/right_hand_index_rota_tip.STL" />
+        <mesh name="right_hand_mid_link1.STL" file="{assets}/right_hand_mid_link1.STL" />
+        <mesh name="right_hand_midback_link1.STL" file="{assets}/right_hand_midback_link1.STL" />
+        <mesh name="right_hand_mid_link2.STL" file="{assets}/right_hand_mid_link2.STL" />
+        <mesh name="right_hand_midback_link2.STL" file="{assets}/right_hand_midback_link2.STL" />
+        <mesh name="right_hand_mid_tip.STL" file="{assets}/right_hand_mid_tip.STL" />
+        <mesh name="right_hand_ring_link1.STL" file="{assets}/right_hand_ring_link1.STL" />
+        <mesh name="right_hand_ringback_link1.STL" file="{assets}/right_hand_ringback_link1.STL" />
+        <mesh name="right_hand_ring_link2.STL" file="{assets}/right_hand_ring_link2.STL" />
+        <mesh name="right_hand_ringback_link2.STL" file="{assets}/right_hand_ringback_link2.STL" />
+        <mesh name="right_hand_ring_tip.STL" file="{assets}/right_hand_ring_tip.STL" />
+        <mesh name="right_hand_pinky_link1.STL" file="{assets}/right_hand_pinky_link1.STL" />
+        <mesh name="right_hand_pinkyback_link1.STL" file="{assets}/right_hand_pinkyback_link1.STL" />
+        <mesh name="right_hand_pinky_link2.STL" file="{assets}/right_hand_pinky_link2.STL" />
+        <mesh name="right_hand_pinkyback_link2.STL" file="{assets}/right_hand_pinkyback_link2.STL" />
+        <mesh name="right_hand_pinky_tip.STL" file="{assets}/right_hand_pinky_tip.STL" />
       </asset>
     """
     wrist_mount = ""

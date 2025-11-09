@@ -1,13 +1,9 @@
 import random
 from pathlib import Path
 
-from vuer_mjcf.utils.file import Save
 from vuer_mjcf.schema import Body
-from vuer_mjcf.tasks import add_env
-from vuer_mjcf.tasks._floating_robotiq import FloatingRobotiq2f85
-from vuer_mjcf.tasks._tile_floor import TileFloor
+from vuer_mjcf.stage_sets._floating_robotiq import FloatingRobotiq2f85
 from vuer_mjcf.third_party.robosuite.robosuite_bin import RobosuiteBin
-
 
 r, g, b = random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1)
 x1, y1 = random.uniform(0, 0.01), random.uniform(-0.45, -0.40)
@@ -15,11 +11,9 @@ x2, y2 = random.uniform(0.1, 0.101), random.uniform(-0.35, -0.30)
 x3, y3 = random.uniform(0.15, 0.151), random.uniform(-0.25, -0.20)
 x4, y4 = random.uniform(0.2, 0.01), random.uniform(-0.15, -0.10)
 
-
 def make_schema(**options):
     from vuer_mjcf.utils.file import Prettify
 
-    floor = TileFloor()
     bin1 = RobosuiteBin(
         attributes=dict(name="bin1", pos="0.1 -0.25 0.6"),
     )
@@ -95,7 +89,6 @@ def make_schema(**options):
          """,
     )
     scene = FloatingRobotiq2f85(
-        floor,
         bin1,
         bin2,
         milk,
@@ -108,31 +101,33 @@ def make_schema(**options):
 
     return scene._xml | Prettify()
 
-
-def register():
-    from vuer_mjcf.tasks.entrypoint import make_env
-
-    add_env(
-        env_id="RobosuitePickplace-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            xml_path="robosuite_pickplace.mjcf.xml",
-            workdir=Path(__file__).parent,
-            mode="multiview",
-        ),
-    )
-
-    add_env(
-        env_id="RobosuitePickplace-lucid-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            xml_path="robosuite_pickplace.mjcf.xml",
-            workdir=Path(__file__).parent,
-            mode="lucid",
-            object_prefix="ball",
-        ),
-    )
-
-
 if __name__ == "__main__":
-    make_schema() | Save(__file__.replace(".py", ".mjcf.xml"))
+    import tempfile
+    from pathlib import Path
+
+    xml_str = make_schema()
+    print("Generated XML for Robosuite Pickplace task")
+    print(xml_str)
+
+    try:
+        import mujoco
+        import mujoco.viewer
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+            f.write(xml_str)
+            temp_path = f.name
+
+        try:
+            model = mujoco.MjModel.from_xml_path(temp_path)
+            print("✓ Robosuite Pickplace task loaded successfully!")
+            print(f"  - Number of bodies: {model.nbody}")
+
+            data = mujoco.MjData(model)
+            print("Launching interactive viewer...")
+            mujoco.viewer.launch(model, data)
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+    except ImportError:
+        print("MuJoCo not available")
+    except Exception as e:
+        print(f"✗ Error: {e}")
+        raise

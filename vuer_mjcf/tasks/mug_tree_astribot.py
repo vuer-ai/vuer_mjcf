@@ -8,13 +8,9 @@ from vuer_mjcf.objects.vuer_mug import VuerMug
 from vuer_mjcf.basic_components.rigs.camera_rig_calibrated import make_camera_rig
 # from vuer_mjcf.basic_components.rigs.camera_rig_stereo import make_origin_stereo_rig
 
-from vuer_mjcf.robots.astribot import AstribotRobotiq2f85
-from vuer_mjcf.tasks._floating_robotiq import UR5Robotiq2f85
-from vuer_mjcf.tasks.base.lucidxr_task import get_site, init_states
-from vuer_mjcf.tasks.base.mocap_task import MocapTask
-from vuer_mjcf.third_party.robohive.robohive_object import RobohiveObj
+from vuer_mjcf.stage_sets.astribot_robotiq import AstribotRobotiq2f85
 import mink
-from vuer_mjcf.components.concrete_slab import ConcreteSlab
+from vuer_mjcf.basic_components.concrete_slab import ConcreteSlab
 from vuer_mjcf.objects.orbit_table import OpticalTable
 
 def _compute_look_at_rotation(
@@ -130,173 +126,33 @@ def make_schema(**options):
 
     return scene._xml | Prettify()
 
-class Fixed(MocapTask):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.mug_site = None
-        self.tree_site = None
-        self.gripper_site = None
-        self.set_sites()
-
-    def set_sites(self):
-        self.mug_site_1 = get_site(self.physics, "mug_handle_1")
-        self.mug_site_2 = get_site(self.physics, "mug_handle_2")
-        self.mug_site_3 = get_site(self.physics, "mug_handle_3")
-        self.tree_site_1 = get_site(self.physics, "tree_goal_1")
-        self.tree_site_2 = get_site(self.physics, "tree_goal_2")
-        self.tree_site_3 = get_site(self.physics, "tree_goal_3")
-        self.tree_site_4 = get_site(self.physics, "tree_goal_4")
-        self.tree_site_5 = get_site(self.physics, "tree_goal_5")
-        self.tree_site_6 = get_site(self.physics, "tree_goal_6")
-
-        self.gripper_site = get_site(self.physics, "gripper-pinch")
-
-    def get_reward(self, physics):
-        reward = 0.0
-        mug_pos_1 = physics.data.site_xpos[self.mug_site_1.id]
-        mug_pos_2 = physics.data.site_xpos[self.mug_site_2.id]
-        mug_pos_3 = physics.data.site_xpos[self.mug_site_3.id]
-        tree_pos_1 = physics.data.site_xpos[self.tree_site_1.id]
-        tree_pos_2 = physics.data.site_xpos[self.tree_site_2.id]
-        tree_pos_3 = physics.data.site_xpos[self.tree_site_3.id]
-        tree_pos_4 = physics.data.site_xpos[self.tree_site_4.id]
-        tree_pos_5 = physics.data.site_xpos[self.tree_site_5.id]
-        tree_pos_6 = physics.data.site_xpos[self.tree_site_6.id]
-
-        gripper_pos = physics.data.site_xpos[self.gripper_site.id]
-        if  ((np.linalg.norm(mug_pos_1 - tree_pos_1) < 0.013
-                or np.linalg.norm(mug_pos_2 - tree_pos_1) < 0.02
-                or np.linalg.norm(mug_pos_3 - tree_pos_1) < 0.013 ) and np.linalg.norm(gripper_pos - tree_pos_1) > 0.1)\
-            or ((np.linalg.norm(mug_pos_1 - tree_pos_2) < 0.013
-                or np.linalg.norm(mug_pos_2 - tree_pos_2) < 0.02
-                or np.linalg.norm(mug_pos_3 - tree_pos_2) < 0.013 ) and np.linalg.norm(gripper_pos - tree_pos_2) > 0.1)\
-            or ((np.linalg.norm(mug_pos_1 - tree_pos_3) < 0.013
-                or np.linalg.norm(mug_pos_2 - tree_pos_3) < 0.02
-                or np.linalg.norm(mug_pos_3 - tree_pos_3) < 0.013 ) and np.linalg.norm(gripper_pos - tree_pos_3) > 0.1)\
-            or ((np.linalg.norm(mug_pos_1 - tree_pos_4) < 0.013
-                or np.linalg.norm(mug_pos_2 - tree_pos_4) < 0.02
-                or np.linalg.norm(mug_pos_3 - tree_pos_4) < 0.013 ) and np.linalg.norm(gripper_pos - tree_pos_4) > 0.1)\
-            or ((np.linalg.norm(mug_pos_1 - tree_pos_5) < 0.013
-                or np.linalg.norm(mug_pos_2 - tree_pos_5) < 0.02
-                or np.linalg.norm(mug_pos_3 - tree_pos_5) < 0.013 ) and np.linalg.norm(gripper_pos - tree_pos_5) > 0.1)\
-            or ((np.linalg.norm(mug_pos_1 - tree_pos_6) < 0.013
-                or np.linalg.norm(mug_pos_2 - tree_pos_6) < 0.02
-                or np.linalg.norm(mug_pos_3 - tree_pos_6) < 0.013 ) and np.linalg.norm(gripper_pos - tree_pos_6) > 0.1):
-            reward = 1.0
-        return reward
-
-
-class MugRandom(Fixed):
-    mug_qpos_addr = 7
-    d = 0.08
-    xy_limits = [center - 0.2, center], [-0.1, 0.1]
-    xy_reject = [x2 - 0.11, x2 + 0.11], [y2 - 0.11, y2 + 0.11]
-
-    xy_poses = init_states(xy_limits, d, xy_reject)
-    print("the length is", len(xy_poses))
-    pose_buffer = None
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    @classmethod
-    def random_state(
-        cls,
-        qpos=None,
-        quat=None,
-        addr=mug_qpos_addr,
-        index=None,
-        mocap_pos=None,
-        **kwargs,
-    ):
-        import random
-        from copy import copy
-
-        if index is None:
-            # if not cls.pose_buffer:
-            #     cls.pose_buffer = copy(cls.xy_poses)
-            #     random.shuffle(cls.pose_buffer)
-            #
-            # x, y = cls.pose_buffer.pop(0)
-            x,y = random.choice(cls.xy_poses)
-        else:
-            x, y = cls.xy_poses[index]
-
-        new_qpos = qpos.copy()
-
-        new_qpos[addr : addr + 2] = x, y
-        # Add Gaussian noise to mocap position
-        if mocap_pos is not None:
-            mocap_pos = mocap_pos.copy()
-            noise = np.random.normal(loc=0.0, scale=0.005, size=mocap_pos.shape)  # std=5mm
-            mocap_pos += noise
-
-        return dict(qpos=new_qpos, quat=quat, mocap_pos=mocap_pos, **kwargs)
-
-def register(strict=True,**_):
-    from vuer_mjcf.tasks import add_env
-    from vuer_mjcf.tasks.entrypoint import make_env
-
-    add_env(
-        env_id="MugTreeAstribot-fixed-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=Fixed,
-            camera_names=["astribot_head_left", "astribot_head_right", "wrist", "third-person"],
-            xml_path="mug_tree_astribot.mjcf.xml",
-            # keyframe_file="mug_tree_astribot.frame.yaml",
-            workdir=Path(__file__).parent,
-            mode="multiview",
-            skip_start=500,
-        ),
-        strict=strict,
-    )
-    
-    add_env(
-        env_id="MugTreeAstribot-random-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=MugRandom,
-            camera_names=["astribot_head_left", "astribot_head_right", "wrist", "third-person"],
-            xml_path="mug_tree_astribot.mjcf.xml",
-            # keyframe_file="mug_tree_astribot.frame.yaml",
-            workdir=Path(__file__).parent,
-            mode="multiview",
-            skip_start=500,
-        ),
-        strict=strict,
-    )
-
-    add_env(
-        env_id="MugTreeAstribot-mug_rand-gsplat-cic_kitchen_4th_day",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=MugRandom,
-            camera_names=["wrist", "third-person"],
-            xml_renderer=make_schema,
-            workdir=Path(__file__).parent,
-            mode="gsplat",
-            gsplat_path=f"{os.environ['LUCIDSIM_EVAL_DATASETS']}/splats/cic_kitchen_4th_day",
-            transform_path=f"{os.environ['LUCIDSIM_EVAL_DATASETS']}/mug_tree/cic_kitchen_4th_day",
-            invisible_prefix=["mug", "tree", "gripper", "astribot"],
-            skip_start=1_000,
-        ),
-        strict=strict,
-    )
-
-
 if __name__ == "__main__":
-    from vuer_mjcf.utils.file import Save
+    import tempfile
+    from pathlib import Path
 
-    make_schema() | Save(__file__.replace(".py", ".mjcf.xml"))
-    
-    # from vuer_mjcf.tasks import make
-    # env = make("MugTreeAstribot-fixed-v1", strict=False)
-    # 
-    # env.unwrapped.env.physics.named.data.qpos
-    # 
-    # obs = env.reset()
-    # from matplotlib import pyplot as plt
-    # plt.imshow(obs["wrist/rgb"]); plt.show()
-    # plt.imshow(obs["astribot_head_left/rgb"]); plt.show()
-    # plt.imshow(obs["astribot_head_right/rgb"]); plt.show()
+    xml_str = make_schema()
+    print("Generated XML for Mug Tree Astribot task")
+    print(xml_str)
+
+    try:
+        import mujoco
+        import mujoco.viewer
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+            f.write(xml_str)
+            temp_path = f.name
+
+        try:
+            model = mujoco.MjModel.from_xml_path(temp_path)
+            print("✓ Mug Tree Astribot task loaded successfully!")
+            print(f"  - Number of bodies: {model.nbody}")
+
+            data = mujoco.MjData(model)
+            print("Launching interactive viewer...")
+            mujoco.viewer.launch(model, data)
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+    except ImportError:
+        print("MuJoCo not available")
+    except Exception as e:
+        print(f"✗ Error: {e}")
+        raise

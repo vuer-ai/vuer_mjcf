@@ -9,6 +9,9 @@ dependencies = [
     "dm-control",
     "lxml",
     "scipy",
+    "vuer[all]>=0.0.68",
+    "pytest>=8.3.5",
+    "mink>=0.0.13",
 ]
 
 [project.optional-dependencies]

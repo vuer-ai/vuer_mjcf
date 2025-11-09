@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.spatial.transform import Rotation as R
-import vuer_mjcf.se3.se3_mujoco as m
+import vuer_mjcf.utils.se3.se3_mujoco as m
 
 
 def compose(pos1, mujoco_quat1, pos2):

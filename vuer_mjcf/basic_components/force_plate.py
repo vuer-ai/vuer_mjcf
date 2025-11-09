@@ -1,6 +1,6 @@
 from vuer_mjcf.utils.file import Prettify
 from vuer_mjcf.schema import MjNode
-from vuer_mjcf.se3.se3_mujoco import WXYZ, Vector3
+from vuer_mjcf.utils.se3.se3_mujoco import WXYZ, Vector3
 
 
 class ForceSensor(MjNode):

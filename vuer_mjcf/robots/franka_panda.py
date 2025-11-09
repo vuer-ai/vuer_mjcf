@@ -377,7 +377,7 @@ class Panda(Body):
     def __init__(self, *_children, end_effector: Body = None, **rest):
         # Ge: we do the super call here to reduce boilerplate code.
         super().__init__(*_children, **rest)
-        from vuer_mjcf.se3.se3_mujoco import WXYZ
+        from vuer_mjcf.utils.se3.se3_mujoco import WXYZ
 
         self._quat = WXYZ(1, 0, 0, 0)
 

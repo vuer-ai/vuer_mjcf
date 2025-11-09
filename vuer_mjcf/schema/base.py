@@ -107,7 +107,7 @@ class XmlTemplate(Xml):
 
     .. code:: python
 
-        from vuer_mjcf.scenes.rooms import Room, Fixtures, Walls
+        from vuer_mjcf.stage_sets.rooms import Room, Fixtures, Walls
 
         Room(name="room1", children=[
             Fixtures(position=[0, 0, 1]),

@@ -1,5 +1,5 @@
 from vuer_mjcf.basic_components.light import make_light
-from vuer_mjcf.se3 import se3_mujoco as m
+from vuer_mjcf.utils.se3 import se3_mujoco as m
 
 
 def make_lighting_rig(pos=m.null_vec):

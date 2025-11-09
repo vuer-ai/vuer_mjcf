@@ -1,5 +1,5 @@
 from vuer_mjcf.schema import Body
-from ..se3.se3_mujoco import WXYZ
+from ..utils.se3.se3_mujoco import WXYZ
 
 
 class TomikaGripper(Body):

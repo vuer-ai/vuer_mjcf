@@ -1,7 +1,7 @@
 import numpy as np
 
 from vuer_mjcf.basic_components.camera import make_camera
-from vuer_mjcf.se3 import se3_three as three, se3_mujoco as m
+from vuer_mjcf.utils.se3 import se3_three as three, se3_mujoco as m
 
 
 """

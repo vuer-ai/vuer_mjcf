@@ -1,7 +1,7 @@
 from vuer_mjcf.robots.franka_panda import Panda
 from vuer_mjcf.robots.tomika_gripper import TomikaGripper
 from vuer_mjcf.schema import Mjcf, Body
-from vuer_mjcf.se3.se3_mujoco import z_rot, π
+from vuer_mjcf.utils.se3.se3_mujoco import z_rot, π
 
 
 class ConcreteSlab(Body):
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     from pathlib import Path
 
     # Set correct assets path
-    assets = str(Path(__file__).parent.parent.parent / "assets" / "robots")
+    assets = str(Path(__file__).parent.parent.parent / "assets")
 
     xml_str = make_schema(assets=assets)
     print("Generated XML for Dual Panda")

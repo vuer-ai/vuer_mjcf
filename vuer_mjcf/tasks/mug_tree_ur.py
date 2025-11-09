@@ -5,12 +5,8 @@ import numpy as np
 from vuer_mjcf.objects.mj_sdf import MjSDF
 from vuer_mjcf.objects.vuer_mug import VuerMug
 from vuer_mjcf.basic_components.rigs.camera_rig_calibrated import make_camera_rig
-from vuer_mjcf.tasks._floating_robotiq import UR5Robotiq2f85
-from vuer_mjcf.tasks.base.lucidxr_task import get_site, init_states
-from vuer_mjcf.tasks.base.mocap_task import MocapTask
+from vuer_mjcf.stage_sets.ur5e_robotiq_scene import UR5Robotiq2f85
 from vuer_mjcf.third_party.robohive.robohive_object import RobohiveObj
-from vuer_mjcf.tasks.mug_tree import Fixed, MugRandom
-
 
 center = 0
 x1, y1 = center - 0.05, -0.025
@@ -71,115 +67,33 @@ def make_schema(**options):
 
     return scene._xml | Prettify()
 
-def register(strict=True,**_):
-    from vuer_mjcf.tasks import add_env
-    from vuer_mjcf.tasks.entrypoint import make_env
-
-    add_env(
-        env_id="MugTreeUr-fixed-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=Fixed,
-            camera_names=["left", "right", "wrist"],
-            xml_path="mug_tree_ur.mjcf.xml",
-            keyframe_file="mug_tree_ur.frame.yaml",
-            workdir=Path(__file__).parent,
-            mode="multiview",
-        ),
-        strict=strict,
-    )
-    add_env(
-        env_id="MugTreeUr-mug_rand-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=MugRandom,
-            camera_names=["left", "right", "wrist"],
-            xml_path="mug_tree_ur.mjcf.xml",
-            keyframe_file="mug_tree_ur.frame.yaml",
-            workdir=Path(__file__).parent,
-            mode="multiview",
-        ),
-        strict=strict,
-    )
-    add_env(
-        env_id="MugTreeUr-mug_rand-domain_rand-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=MugRandom,
-            camera_names=["right", "left", "wrist",],
-            xml_renderer=make_schema,
-            workdir=Path(__file__).parent,
-            mode="domain_rand",
-        ),
-        strict=strict,
-    )
-    add_env(
-        env_id="MugTreeUr-mug_rand-domain_rand-eval-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=MugRandom,
-            camera_names=["right", "left", "wrist",],
-            xml_renderer=make_schema,
-            workdir=Path(__file__).parent,
-            mode="domain_rand",
-            randomize_camera=False,
-            randomize_every_n_steps=0,
-        ),
-        strict=strict,
-    )
-    add_env(
-        env_id="MugTreeUr-fixed-camera_rand-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=Fixed,
-            camera_names=["left", "right", "wrist"],
-            xml_path="mug_tree_ur.mjcf.xml",
-            keyframe_file="mug_tree_ur.frame.yaml",
-            workdir=Path(__file__).parent,
-            mode="domain_rand",
-            randomize_color=False,
-            randomize_lighting=False,
-            randomize_camera=True,
-            randomize_every_n_steps=50,
-            camera_randomization_args=dict(
-                camera_names=["left", "right"],
-            ),
-        ),
-        strict=strict,
-    )
-    add_env(
-        env_id="MugTreeUr-fixed-lucid-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=Fixed,
-            camera_names=["left", "right", "wrist"],
-            xml_renderer=make_schema,
-            keyframe_file="mug_tree_ur.frame.yaml",
-            workdir=Path(__file__).parent,
-            mode="lucid",
-            prefix_to_class_ids={"mug": 148, "table": 16, "tree": 41},
-            object_keys=["mug", "tree"],
-        ),
-        strict=strict,
-    )
-    add_env(
-        env_id="MugTreeUr-mug_rand-lucid-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            task=MugRandom,
-            camera_names=["left", "right", "wrist"],
-            xml_renderer=make_schema,
-            keyframe_file="mug_tree_ur.frame.yaml",
-            workdir=Path(__file__).parent,
-            mode="lucid",
-            prefix_to_class_ids={"mug": 148, "table": 16, "tree": 41},
-            object_keys=["mug", "tree"],
-        ),
-        strict=strict,
-    )
-
-
 if __name__ == "__main__":
-    from vuer_mjcf.utils.file import Save
+    import tempfile
+    from pathlib import Path
 
-    make_schema() | Save(__file__.replace(".py", ".mjcf.xml"))
+    xml_str = make_schema()
+    print("Generated XML for Mug Tree Ur task")
+    print(xml_str)
+
+    try:
+        import mujoco
+        import mujoco.viewer
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+            f.write(xml_str)
+            temp_path = f.name
+
+        try:
+            model = mujoco.MjModel.from_xml_path(temp_path)
+            print("✓ Mug Tree Ur task loaded successfully!")
+            print(f"  - Number of bodies: {model.nbody}")
+
+            data = mujoco.MjData(model)
+            print("Launching interactive viewer...")
+            mujoco.viewer.launch(model, data)
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+    except ImportError:
+        print("MuJoCo not available")
+    except Exception as e:
+        print(f"✗ Error: {e}")
+        raise

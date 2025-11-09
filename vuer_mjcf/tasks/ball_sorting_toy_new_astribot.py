@@ -5,11 +5,9 @@ from pathlib import Path
 import numpy as np
 
 from vuer_mjcf.objects.mj_sdf import MjSDF
-from vuer_mjcf.robots.astribot import AstribotRobotiq2f85
-from vuer_mjcf.tasks._floating_robotiq import UR5Robotiq2f85
+from vuer_mjcf.stage_sets.astribot_robotiq import AstribotRobotiq2f85
+from vuer_mjcf.stage_sets.ur5e_robotiq_scene import UR5Robotiq2f85
 from vuer_mjcf.basic_components.rigs.camera_rig_calibrated import make_camera_rig
-from vuer_mjcf.tasks.base.lucidxr_task import get_site
-from vuer_mjcf.tasks.base.mocap_task import MocapTask
 from itertools import combinations
 from math import hypot
 import random
@@ -95,7 +93,6 @@ def make_schema(**options):
     )
     camera_rig = make_camera_rig(pos=[0, 0, 0.77])
 
-
     box = MjSDF(
         pos=[0.465, 0.07, 0.82],
         quat=[1, 0, 0, 0],
@@ -124,7 +121,6 @@ def make_schema(**options):
             "name": "cylinder-blue",
         },
     )
-
 
     children = [
         *camera_rig.get_cameras(),
@@ -162,257 +158,33 @@ def make_schema(**options):
 
     return scene._xml | Prettify()
 
-
-class Fixed(MocapTask):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.step = 0
-
-    @staticmethod
-    def _site_in_hole(
-        physics,
-        cyl_site_id: int,
-        hole_site_id: int,
-        radial_margin: float = 0.002,  # shrink circle slightly for robustness
-        depth_thresh: float = 0.001,
-    ):  # require being 5 mm past the plane
-        """
-        Returns True iff the cylinder site is inside the hole circle AND has crossed the hole plane.
-
-        - Uses the hole site's frame so this works even if the hole is tilted.
-        - radial_margin > 0 makes the test stricter than the exact radius to avoid edge flukes.
-        - depth_thresh < 0 means: below the hole plane along the hole's local +Z axis.
-        """
-        # Hole geometry
-        hole_pos = physics.data.site_xpos[hole_site_id]  # (3,)
-        hole_R = physics.data.site_xmat[hole_site_id].reshape(3, 3)  # local->world
-        hole_rad = float(physics.model.site_size[hole_site_id][0])  # sphere site: size[0] = radius
-
-        # Cylinder site world pos
-        cyl_pos = physics.data.site_xpos[cyl_site_id]
-
-        # Express relative position in the hole's local frame
-        rel_world = cyl_pos - hole_pos
-        rel_local = hole_R.T @ rel_world  # world -> local
-
-        radial_dist = np.linalg.norm(rel_local[:2])  # distance in hole plane
-        depth_along_hole_z = rel_local[2]  # +z is "out of hole"; negative is "through"
-
-        inside_circle = radial_dist <= (hole_rad - radial_margin)
-        past_plane = depth_along_hole_z <= depth_thresh
-        # print("depth_along_hole_z", depth_along_hole_z, "radial_dist", radial_dist, "hole_rad", hole_rad)
-        # print("past_plane", past_plane, "inside_circle", inside_circle)
-        return bool(inside_circle and past_plane)
-
-    def check_orange_in_goal(self, physics):
-        self.cylinder_1 = get_site(physics, "cylinder-orange")
-        return self._site_in_hole(physics, self.cylinder_1.id, get_site(physics, "hole-1").id)
-
-    def check_blue_in_goal(self, physics):
-        self.cylinder_2 = get_site(physics, "cylinder-blue")
-        return self._site_in_hole(physics, self.cylinder_2.id, get_site(physics, "hole-1").id)
-
-    def get_reward(self, physics):
-
-        if self.step == 0 and self.check_blue_in_goal(physics):
-            self.step += 1
-        if self.step == 1 and self.check_orange_in_goal(physics):
-            self.step += 1
-        if self.step == 2:
-            return 1.0
-
-        # print("step", self.step)
-        # print(f"Step: {self.step}, Orange in goal: {self.check_orange_in_goal(physics)}, Blue in goal: {self.check_blue_in_goal(physics)}")
-
-        return 0.0
-
-
-class ColorRandom(Fixed):
-    box_qpos_addr = 0
-    ball_qpos_addrs = [7, 14, 21]
-
-    @classmethod
-    def random_state(
-        cls,
-        qpos=None,
-        quat=None,
-        addr=box_qpos_addr,
-        index=None,
-        mocap_pos=None,
-        **kwargs,
-    ):
-        new_qpos = qpos.copy()
-        # randomly swap the balls positions
-        positions = [
-            [x1, y1, 0.62],
-            [x3, y3, 0.62],
-            [x4, y4, 0.62],
-        ]
-        random.shuffle(positions)
-        for i, ball_addr in enumerate(cls.ball_qpos_addrs):
-            new_qpos[ball_addr] = positions[i][0]
-            new_qpos[ball_addr + 1] = positions[i][1]
-            new_qpos[ball_addr + 2] = positions[i][2]
-        if mocap_pos is not None:
-            mocap_pos = mocap_pos.copy()
-            mocap_pos += np.random.normal(0.0, 0.005, mocap_pos.shape)
-            
-        return dict(qpos=new_qpos, quat=quat, mocap_pos=mocap_pos, **kwargs)
-
-
-class BallRandom(Fixed):
-    box_qpos_addr = 0
-    ball_qpos_addrs = [7, 14]
-    d = 0.02
-    initial_pos = [x_center, y_center, 0.79]
-    x_bounds = [-0.125, 0.125]
-    y_bounds = [-0.1, 0.1]
-
-    xmin = initial_pos[0] + x_bounds[0]
-    xmax = initial_pos[0] + x_bounds[1]
-    ymin = initial_pos[1] + y_bounds[0]
-    ymax = initial_pos[1] + y_bounds[1]
-
-    eps = 0.08
-
-    @classmethod
-    def random_state(
-        cls,
-        qpos=None,
-        quat=None,
-        addr=box_qpos_addr,
-        index=None,
-        mocap_pos=None,
-        **kwargs,
-    ):
-        points = sample_two_points(
-            xmin=cls.xmin,
-            xmax=cls.xmax,
-            ymin=cls.ymin,
-            ymax=cls.ymax,
-            d=cls.d,
-            eps=cls.eps,
-        )
-
-        new_qpos = qpos.copy()
-        for ball_addr in cls.ball_qpos_addrs:
-            x, y = points.pop()
-            new_qpos[ball_addr] = x
-            new_qpos[ball_addr + 1] = y
-            new_qpos[ball_addr + 2] = 0.79
-
-        if mocap_pos is not None:
-            mocap_pos = mocap_pos.copy()
-            mocap_pos += np.random.normal(0.0, 0.005, mocap_pos.shape)
-
-        return dict(qpos=new_qpos, quat=quat, mocap_pos=mocap_pos, **kwargs)
-
-
-def register(strict=True):
-    from vuer_mjcf.tasks import add_env
-    from vuer_mjcf.tasks.entrypoint import make_env
-
-    add_env(
-        env_id="BallSortingToyNewAstribot-fixed-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            xml_renderer = make_schema,
-            workdir=Path(__file__).parent,
-            camera_names=["left", "right", "wrist", "third-person"],
-            # keyframe_file="ball_sorting_toy_new.frame.yaml",
-        ),
-        strict=strict,
-    )
-    add_env(
-        env_id="BallSortingToyNewAstribot-ball_random-v1",
-        entrypoint=make_env,
-        kwargs=dict(
-            xml_renderer=make_schema,
-            task=BallRandom,
-            workdir=Path(__file__).parent,
-            camera_names=["left", "right", "wrist", "third-person"],
-            # keyframe_file="ball_sorting_toy_new.frame.yaml",
-        ),
-        strict=strict,
-    )
-
-    add_env(
-        env_id="BallSortingToyNewAstribot-ball_random-gsplat-cic_11th_kitchen_back",
-        entrypoint=make_env,
-        kwargs=dict(
-            xml_renderer=make_schema,
-            task=BallRandom,
-            workdir=Path(__file__).parent,
-            camera_names=["wrist", "third-person"],
-            mode="gsplat",
-            gsplat_path=f"{os.environ['LUCIDSIM_EVAL_DATASETS']}/splats/cic_11th_kitchen_back",
-            transform_path=f"{os.environ['LUCIDSIM_EVAL_DATASETS']}/ball_sorting_toy_new/cic_11th_kitchen_back",
-            invisible_prefix=["cylinder-blue", "cylinder-orange", "ball-sorting-toy", "gripper", "astribot"],
-            skip_start=1000,
-            # keyframe_file="ball_sorting_toy_new_floating.frame.yaml",
-        ),
-        strict=strict,
-    )
-    # add_env(
-    #     env_id="BallSortingToyNew-color_random-v1",
-    #     entrypoint=make_env,
-    #     kwargs=dict(
-    #         xml_renderer = make_schema,
-    #         task=ColorRandom,
-    #         workdir=Path(__file__).parent,
-    #         camera_names=["left", "right", "wrist"],
-    #         keyframe_file="ball_sorting_toy_new.frame.yaml",
-    #     ),
-    #     strict=strict,
-    # )
-    # add_env(
-    #     env_id="BallSortingToyNew-fixed-lucid-v1",
-    #     entrypoint=make_env,
-    #     kwargs=dict(
-    #         xml_renderer=make_schema,
-    #         task=Fixed,
-    #         xml_render_options=dict(mode="lucid"),
-    #         workdir=Path(__file__).parent,
-    #         camera_names=["left", "right", "wrist"],
-    #         mode="lucid",
-    #         keyframe_file="ball_sorting_toy_new.frame.yaml",
-    #         object_keys=["cylinder-blue", "cylinder-orange", "ball-sorting-toy"],
-    #     ),
-    #     strict=strict,
-    # )
-    # add_env(
-    #     env_id="BallSortingToyNew-ball_random-gsplat-v1",
-    #     entrypoint=make_env,
-    #     kwargs=dict(
-    #         xml_renderer = make_schema,
-    #         task=BallRandom,
-    #         workdir=Path(__file__).parent,
-    #         camera_names=["left", "right", "wrist"],
-    #         mode="gsplat",
-    #         dataset_path=f"{os.environ['LUCIDSIM_EVAL_DATASETS']}/ball_toy/cic_lunette_bookshelf_3",
-    #         invisible_prefix=["cylinder-blue", "cylinder-orange", "ball-sorting-toy", "gripper", "ur5"],
-    #         keyframe_file="ball_sorting_toy_new.frame.yaml",
-    #     ),
-    #     strict=strict,
-    # )
-    # add_env(
-    #     env_id="BallSortingToyNew-ball_random-gsplat-v2",
-    #     entrypoint=make_env,
-    #     kwargs=dict(
-    #         xml_renderer = make_schema,
-    #         task=BallRandom,
-    #         workdir=Path(__file__).parent,
-    #         camera_names=["left", "right", "wrist"],
-    #         mode="gsplat",
-    #         dataset_path=f"{os.environ['LUCIDSIM_EVAL_DATASETS']}/ball_toy/cic_kitchen_v3",
-    #         invisible_prefix=["cylinder-blue", "cylinder-orange", "ball-sorting-toy", "gripper", "ur5"],
-    #         keyframe_file="ball_sorting_toy_new.frame.yaml",
-    #     ),
-    #     strict=strict,
-    # )
-
-
 if __name__ == "__main__":
-    from vuer_mjcf.utils.file import Save
+    import tempfile
+    from pathlib import Path
 
-    make_schema() | Save(__file__.replace(".py", ".mjcf.xml"))
+    xml_str = make_schema()
+    print("Generated XML for Ball Sorting Toy New Astribot task")
+    print(xml_str)
+
+    try:
+        import mujoco
+        import mujoco.viewer
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as f:
+            f.write(xml_str)
+            temp_path = f.name
+
+        try:
+            model = mujoco.MjModel.from_xml_path(temp_path)
+            print("✓ Ball Sorting Toy New Astribot task loaded successfully!")
+            print(f"  - Number of bodies: {model.nbody}")
+
+            data = mujoco.MjData(model)
+            print("Launching interactive viewer...")
+            mujoco.viewer.launch(model, data)
+        finally:
+            Path(temp_path).unlink(missing_ok=True)
+    except ImportError:
+        print("MuJoCo not available")
+    except Exception as e:
+        print(f"✗ Error: {e}")
+        raise

@@ -1,5 +1,5 @@
 from vuer_mjcf.basic_components.camera import make_camera
-from vuer_mjcf.se3 import se3_mujoco as m
+from vuer_mjcf.utils.se3 import se3_mujoco as m
 
 CAM_MODULE_W = 0.034
 

@@ -98,7 +98,7 @@ class MjNode(XmlTemplate):
             **attributes or {},
         )
 
-        from vuer_mjcf.se3.se3_mujoco import Vector3, WXYZ
+        from vuer_mjcf.utils.se3.se3_mujoco import Vector3, WXYZ
 
         self._pos = Vector3(0, 0, 0)
         self._quat = WXYZ(1, 0, 0, 0)
@@ -155,7 +155,7 @@ class Body(MjNode):
     def __init__(self, *_children, pos=None, quat=None, remove_joints=False, **kwargs):
         super().__init__(*_children, **kwargs)
 
-        import vuer_mjcf.se3.se3_mujoco as m
+        import vuer_mjcf.utils.se3.se3_mujoco as m
 
         if pos:
             self._pos = m.Vector3(*pos)
@@ -188,7 +188,7 @@ class FreeBody(MjNode):
         _children = [*_children, "<freejoint/>"]
         super().__init__(*_children, **kwargs)
 
-        import vuer_mjcf.se3.se3_mujoco as m
+        import vuer_mjcf.utils.se3.se3_mujoco as m
 
         if pos:
             self._pos = m.Vector3(*pos)
@@ -214,7 +214,7 @@ class Composite(MjNode):
 
     def __init__(self, *_children, pos=None, quat=None, **kwargs):
         super().__init__(*_children, **kwargs)
-        import vuer_mjcf.se3.se3_mujoco as m
+        import vuer_mjcf.utils.se3.se3_mujoco as m
 
         if pos:
             # We do not use pos, instead we create an attribute for offset.
@@ -253,7 +253,7 @@ class Mjcf(MjNode):
     def __init__(self, *_children, pos=None, quat=None, **kwargs):
         super().__init__(*_children, **kwargs)
 
-        import vuer_mjcf.se3.se3_mujoco as m
+        import vuer_mjcf.utils.se3.se3_mujoco as m
 
         # The root MuJoCo model class does not want to include these
         # in the attributes.
